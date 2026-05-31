@@ -6,18 +6,28 @@ import { motion } from "framer-motion";
 import { Home, Search, PlusSquare, Bell, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useNotificationStore } from "@/stores/notification-store";
+import { useChatStore } from "@/stores/chat-store";
 
 const navItems = [
-  { href: "/feed", icon: Home, label: "Feed" },
-  { href: "/search", icon: Search, label: "Search" },
-  { href: "/feed?create=true", icon: PlusSquare, label: "Create", isCreate: true },
-  { href: "/notifications", icon: Bell, label: "Alerts" },
-  { href: "/profile", icon: User, label: "Profile", isDynamic: true },
+  { href: "/feed", icon: Home, label: "Feed", badgeKey: null },
+  { href: "/search", icon: Search, label: "Search", badgeKey: null },
+  { href: "/feed?create=true", icon: PlusSquare, label: "Create", isCreate: true, badgeKey: null },
+  { href: "/notifications", icon: Bell, label: "Alerts", badgeKey: "notifications" as const },
+  { href: "/profile", icon: User, label: "Profile", isDynamic: true, badgeKey: null },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { unreadCount: notifUnread } = useNotificationStore();
+  const { totalUnread: chatUnread } = useChatStore();
+
+  const getBadgeCount = (key: "chat" | "notifications" | null) => {
+    if (key === "notifications") return notifUnread;
+    if (key === "chat") return chatUnread;
+    return 0;
+  };
 
   return (
     <nav
@@ -33,6 +43,7 @@ export function BottomNav() {
           const isActive = item.isDynamic
             ? pathname.startsWith("/profile")
             : pathname.startsWith(item.href.split("?")[0]) && !item.isCreate;
+          const badgeCount = getBadgeCount(item.badgeKey);
 
           return (
             <Link
@@ -66,7 +77,14 @@ export function BottomNav() {
                 </div>
               ) : (
                 <>
-                  <item.icon className="h-5 w-5" />
+                  <div className="relative">
+                    <item.icon className="h-5 w-5" />
+                    {badgeCount > 0 && (
+                      <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-white shadow-lg shadow-accent/30">
+                        {badgeCount > 99 ? "99+" : badgeCount}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[10px] font-medium">{item.label}</span>
                 </>
               )}

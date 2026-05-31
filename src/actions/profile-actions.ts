@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "@/actions/notification-actions";
 
 export async function getProfile(username: string) {
   const supabase = await createClient();
@@ -139,6 +140,13 @@ export async function followUser(targetUserId: string) {
     if (error.code === "23505") return { error: "Already following" };
     return { error: error.message };
   }
+
+  // Create notification for target user
+  await createNotification({
+    userId: targetUserId,
+    actorId: user.id,
+    type: "follow",
+  });
 
   return { success: true };
 }

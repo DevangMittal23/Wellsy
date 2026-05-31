@@ -13,19 +13,25 @@ import {
 } from "lucide-react";
 import { followUser, unfollowUser } from "@/actions/profile-actions";
 import { getInitials, formatRelativeTime } from "@/lib/utils";
+import { FriendButton } from "@/components/friends/friend-button";
 import type { Profile } from "@/types/user";
+import type { FriendshipStatus } from "@/actions/friend-actions";
 import Link from "next/link";
 
 interface ProfileHeaderProps {
   profile: Profile;
   isOwnProfile: boolean;
   isFollowing: boolean;
+  friendshipStatus: FriendshipStatus;
+  friendRequestId?: string;
 }
 
 export function ProfileHeader({
   profile,
   isOwnProfile,
   isFollowing: initialIsFollowing,
+  friendshipStatus,
+  friendRequestId,
 }: ProfileHeaderProps) {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isPending, startTransition] = useTransition();
@@ -104,6 +110,14 @@ export function ProfileHeader({
             </Link>
           ) : (
             <>
+              {/* Friend Button */}
+              <FriendButton
+                targetUserId={profile.id}
+                initialStatus={friendshipStatus}
+                requestId={friendRequestId}
+              />
+
+              {/* Follow Button */}
               <button
                 onClick={handleFollowToggle}
                 disabled={isPending}
@@ -125,6 +139,8 @@ export function ProfileHeader({
                   </>
                 )}
               </button>
+
+              {/* Message Button */}
               <Link
                 href={`/chat?user=${profile.username}`}
                 className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text-primary transition-all duration-200 hover:bg-surface-hover active:scale-95"

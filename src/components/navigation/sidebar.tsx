@@ -8,25 +8,60 @@ import {
   Search,
   Bell,
   MessageCircle,
-  User,
+  Users,
   Settings,
   LogOut,
   PlusSquare,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useNotificationStore } from "@/stores/notification-store";
+import { useChatStore } from "@/stores/chat-store";
+import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications";
+import { useChatRooms } from "@/hooks/use-chat-rooms";
 import { signOut } from "@/actions/auth-actions";
+import { getUnreadNotificationCount } from "@/actions/notification-actions";
+import { getTotalUnreadMessages } from "@/actions/chat-actions";
 import { cn, getInitials } from "@/lib/utils";
+import { useEffect } from "react";
 
 const navItems = [
-  { href: "/feed", icon: Home, label: "Feed" },
-  { href: "/search", icon: Search, label: "Search" },
-  { href: "/chat", icon: MessageCircle, label: "Chat" },
-  { href: "/notifications", icon: Bell, label: "Notifications" },
+  { href: "/feed", icon: Home, label: "Feed", badgeKey: null },
+  { href: "/search", icon: Search, label: "Search", badgeKey: null },
+  { href: "/discover", icon: Users, label: "Discover", badgeKey: null },
+  { href: "/chat", icon: MessageCircle, label: "Chat", badgeKey: "chat" as const },
+  { href: "/notifications", icon: Bell, label: "Notifications", badgeKey: "notifications" as const },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { unreadCount: notifUnread, setUnreadCount: setNotifUnread } = useNotificationStore();
+  const { totalUnread: chatUnread, setTotalUnread: setChatUnread } = useChatStore();
+
+  // Subscribe to realtime updates
+  useRealtimeNotifications(user?.id);
+  useChatRooms(user?.id);
+
+  // Fetch initial unread counts
+  useEffect(() => {
+    async function fetchCounts() {
+      const [notifCount, chatCount] = await Promise.all([
+        getUnreadNotificationCount(),
+        getTotalUnreadMessages(),
+      ]);
+      setNotifUnread(notifCount);
+      setChatUnread(chatCount);
+    }
+    if (user?.id) {
+      fetchCounts();
+    }
+  }, [user?.id, setNotifUnread, setChatUnread]);
+
+  const getBadgeCount = (key: "chat" | "notifications" | null) => {
+    if (key === "notifications") return notifUnread;
+    if (key === "chat") return chatUnread;
+    return 0;
+  };
 
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-dvh w-[260px] flex-col border-r border-border bg-background-secondary lg:flex">
@@ -46,6 +81,7 @@ export function Sidebar() {
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
+          const badgeCount = getBadgeCount(item.badgeKey);
           return (
             <Link
               key={item.href}
@@ -69,12 +105,19 @@ export function Sidebar() {
                   }}
                 />
               )}
-              <item.icon
-                className={cn(
-                  "h-5 w-5 shrink-0 transition-colors",
-                  isActive ? "text-accent" : "text-text-muted group-hover:text-text-secondary"
+              <div className="relative">
+                <item.icon
+                  className={cn(
+                    "h-5 w-5 shrink-0 transition-colors",
+                    isActive ? "text-accent" : "text-text-muted group-hover:text-text-secondary"
+                  )}
+                />
+                {badgeCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-white shadow-lg shadow-accent/30">
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
                 )}
-              />
+              </div>
               {item.label}
             </Link>
           );

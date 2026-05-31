@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "@/actions/notification-actions";
 
 const POSTS_PER_PAGE = 10;
 
@@ -221,6 +222,23 @@ export async function likePost(postId: string) {
     return { error: error.message };
   }
 
+  // Create notification for post owner
+  const { data: post } = await supabase
+    .from("posts")
+    .select("user_id")
+    .eq("id", postId)
+    .single();
+
+  if (post) {
+    await createNotification({
+      userId: post.user_id,
+      actorId: user.id,
+      type: "like",
+      entityType: "post",
+      entityId: postId,
+    });
+  }
+
   return { success: true };
 }
 
@@ -311,6 +329,24 @@ export async function createComment(postId: string, formData: FormData) {
     .single();
 
   if (error) return { error: error.message };
+
+  // Create notification for post owner
+  const { data: post } = await supabase
+    .from("posts")
+    .select("user_id")
+    .eq("id", postId)
+    .single();
+
+  if (post) {
+    await createNotification({
+      userId: post.user_id,
+      actorId: user.id,
+      type: "comment",
+      entityType: "post",
+      entityId: postId,
+      content: content.slice(0, 100),
+    });
+  }
 
   revalidatePath("/feed");
   return { comment };

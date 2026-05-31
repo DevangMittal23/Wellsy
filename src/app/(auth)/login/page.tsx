@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { signIn, type AuthActionState } from "@/actions/auth-actions";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, User } from "lucide-react";
 import { useState } from "react";
 
 export default function LoginPage() {
@@ -25,7 +25,7 @@ export default function LoginPage() {
           Welcome back
         </h2>
         <p className="mt-1 text-sm text-text-secondary">
-          Sign in to your account to continue
+          Sign in with your username or email
         </p>
       </div>
 
@@ -40,23 +40,26 @@ export default function LoginPage() {
           </motion.div>
         )}
 
-        {/* Email */}
+        {/* Username or Email */}
         <div className="space-y-2">
           <label
-            htmlFor="login-email"
+            htmlFor="login-identifier"
             className="text-sm font-medium text-text-secondary"
           >
-            Email
+            Username or Email
           </label>
-          <input
-            id="login-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            placeholder="you@example.com"
-            className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-primary placeholder:text-text-muted transition-colors duration-150 hover:border-border-focus/40 focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-border-focus/50"
-          />
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+            <input
+              id="login-identifier"
+              name="identifier"
+              type="text"
+              autoComplete="username"
+              required
+              placeholder="@username or you@example.com"
+              className="w-full rounded-lg border border-border bg-surface py-3 pl-11 pr-4 text-sm text-text-primary placeholder:text-text-muted transition-colors duration-150 hover:border-border-focus/40 focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-border-focus/50"
+            />
+          </div>
         </div>
 
         {/* Password */}

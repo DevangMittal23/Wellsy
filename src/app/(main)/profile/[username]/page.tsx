@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProfile, checkFollowing } from "@/actions/profile-actions";
+import { checkFriendshipStatus } from "@/actions/friend-actions";
 import { getUserPosts } from "@/actions/post-actions";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileHeader } from "@/components/profile/profile-header";
@@ -42,7 +43,24 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   } = await supabase.auth.getUser();
 
   const isOwnProfile = user?.id === profile.id;
-  const isFollowing = user ? await checkFollowing(profile.id) : false;
+  const [isFollowing, friendshipStatus] = await Promise.all([
+    user ? checkFollowing(profile.id) : false,
+    user && !isOwnProfile ? checkFriendshipStatus(profile.id) : ("none" as const),
+  ]);
+
+  // If they sent us a friend request, get the request ID for the accept button
+  let friendRequestId: string | undefined;
+  if (friendshipStatus === "request_received" && user) {
+    const { data: request } = await supabase
+      .from("friend_requests")
+      .select("id")
+      .eq("sender_id", profile.id)
+      .eq("receiver_id", user.id)
+      .eq("status", "pending")
+      .maybeSingle();
+    friendRequestId = request?.id;
+  }
+
   const { posts } = await getUserPosts(profile.id);
 
   return (
@@ -51,6 +69,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         profile={profile as Profile}
         isOwnProfile={isOwnProfile}
         isFollowing={isFollowing}
+        friendshipStatus={friendshipStatus}
+        friendRequestId={friendRequestId}
       />
       <ProfileTabs
         posts={posts as Post[]}

@@ -36,7 +36,7 @@ export async function signUp(
     return { error: "Username is already taken" };
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -51,6 +51,14 @@ export async function signUp(
     return { error: error.message };
   }
 
+  // Store email on the profile so we can look it up by username during login
+  if (data.user) {
+    await supabase
+      .from("profiles")
+      .update({ email: email.toLowerCase() })
+      .eq("id", data.user.id);
+  }
+
   revalidatePath("/", "layout");
   redirect("/feed");
 }
@@ -61,11 +69,46 @@ export async function signIn(
 ): Promise<AuthActionState> {
   const supabase = await createClient();
 
-  const email = formData.get("email") as string;
+  const identifier = formData.get("identifier") as string;
   const password = formData.get("password") as string;
 
-  if (!email || !password) {
-    return { error: "Email and password are required" };
+  if (!identifier || !password) {
+    return { error: "Username/email and password are required" };
+  }
+
+  let email = identifier.trim();
+
+  // If the input doesn't look like an email, treat it as a username
+  if (!email.includes("@")) {
+    const username = email.toLowerCase().replace(/^@/, "");
+
+    // Try the secure RPC function first (can access auth.users directly)
+    let resolvedEmail: string | null = null;
+
+    const { data: rpcResult } = await supabase.rpc("get_email_by_username", {
+      lookup_username: username,
+    });
+
+    if (rpcResult) {
+      resolvedEmail = rpcResult as string;
+    }
+
+    // Fallback: try profiles table directly
+    if (!resolvedEmail) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("username", username)
+        .single();
+
+      resolvedEmail = profile?.email || null;
+    }
+
+    if (!resolvedEmail) {
+      return { error: "No account found with that username" };
+    }
+
+    email = resolvedEmail;
   }
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -74,7 +117,13 @@ export async function signIn(
   });
 
   if (error) {
-    return { error: "Invalid email or password" };
+    if (error.message === "Invalid login credentials") {
+      return { error: "Incorrect username/email or password" };
+    }
+    if (error.message === "Email not confirmed") {
+      return { error: "Please check your email to confirm your account first" };
+    }
+    return { error: error.message };
   }
 
   revalidatePath("/", "layout");
