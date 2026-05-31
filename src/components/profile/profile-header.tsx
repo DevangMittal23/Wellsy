@@ -102,7 +102,7 @@ export function ProfileHeader({
         <div className="absolute right-0 top-2 flex items-center gap-2 sm:top-4">
           {isOwnProfile ? (
             <Link
-              href="/settings"
+              href="/settings/profile"
               className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2 text-sm font-medium text-text-primary transition-all duration-200 hover:bg-surface-hover active:scale-95"
             >
               <Edit3 className="h-4 w-4" />

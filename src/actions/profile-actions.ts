@@ -25,13 +25,37 @@ export async function getCurrentProfile() {
 
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  try {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
 
-  return profile;
+    if (error || !profile) {
+      // Auto backfill profile if missing
+      const displayName = user.user_metadata?.display_name || "User";
+      const username = user.user_metadata?.username || `user_${user.id.substring(0, 8)}`;
+      
+      const { data: newProfile } = await supabase
+        .from("profiles")
+        .insert({
+          id: user.id,
+          username: username.toLowerCase(),
+          display_name: displayName,
+          email: user.email?.toLowerCase(),
+        })
+        .select()
+        .single();
+      
+      return newProfile || null;
+    }
+
+    return profile;
+  } catch (err) {
+    console.error("Error in getCurrentProfile server action:", err);
+    return null;
+  }
 }
 
 export async function updateProfile(formData: FormData) {
@@ -114,6 +138,63 @@ export async function uploadAvatar(formData: FormData) {
   const { error: updateError } = await supabase
     .from("profiles")
     .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+
+  if (updateError) return { error: updateError.message };
+
+  revalidatePath("/", "layout");
+  return { url: publicUrl };
+}
+
+export async function uploadCover(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Unauthorized" };
+
+  const file = formData.get("cover") as File;
+  if (!file) return { error: "No file provided" };
+
+  const fileExt = file.name.split(".").pop();
+  const fileName = `${user.id}/cover.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("covers")
+    .upload(fileName, file, { upsert: true });
+
+  if (uploadError) {
+    // If the covers bucket doesn't exist, try avatars bucket with a different path
+    const fallbackName = `${user.id}/cover.${fileExt}`;
+    const { error: fallbackError } = await supabase.storage
+      .from("avatars")
+      .upload(fallbackName, file, { upsert: true });
+
+    if (fallbackError) return { error: fallbackError.message };
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("avatars").getPublicUrl(fallbackName);
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ cover_url: publicUrl, updated_at: new Date().toISOString() })
+      .eq("id", user.id);
+
+    if (updateError) return { error: updateError.message };
+
+    revalidatePath("/", "layout");
+    return { url: publicUrl };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("covers").getPublicUrl(fileName);
+
+  const { error: updateError } = await supabase
+    .from("profiles")
+    .update({ cover_url: publicUrl, updated_at: new Date().toISOString() })
     .eq("id", user.id);
 
   if (updateError) return { error: updateError.message };

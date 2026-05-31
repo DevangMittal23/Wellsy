@@ -226,9 +226,10 @@ CREATE POLICY "Auth users can create rooms"
 CREATE POLICY "Room members can view members"
     ON public.room_members FOR SELECT
     USING (
+        user_id = auth.uid() OR
         EXISTS (
-            SELECT 1 FROM public.room_members rm
-            WHERE rm.room_id = room_id AND rm.user_id = auth.uid()
+            SELECT 1 FROM public.chat_rooms cr
+            WHERE cr.id = room_id
         )
     );
 

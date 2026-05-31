@@ -47,6 +47,88 @@ export default function SignupPage() {
     { label: "Contains number", met: /[0-9]/.test(password) },
   ];
 
+  // If signup was successful and needs email confirmation, show premium success screen
+  if (state?.success) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="glass-card overflow-hidden p-6 md:p-8 relative border border-success/20 shadow-2xl"
+      >
+        <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-success to-accent" />
+        
+        <div className="text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-success/10 ring-8 ring-success/5 animate-pulse">
+            <Check className="h-8 w-8 text-success" />
+          </div>
+          
+          <h2 className="text-2xl font-bold tracking-tight text-text-primary">
+            Verification Sent!
+          </h2>
+          
+          <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+            {state.message}
+          </p>
+
+          {/* Stepper instructions for next steps */}
+          <div className="mt-8 text-left border-t border-border pt-6 space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+              Next Steps
+            </h3>
+            
+            <div className="flex gap-3 items-start">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent mt-0.5">
+                1
+              </div>
+              <div>
+                <p className="text-sm font-medium text-text-primary">Check your Inbox</p>
+                <p className="text-xs text-text-muted">Look for an email from WELLSY containing your activation link.</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 items-start">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent mt-0.5">
+                2
+              </div>
+              <div>
+                <p className="text-sm font-medium text-text-primary">Click the Link</p>
+                <p className="text-xs text-text-muted">Click the confirmation link to securely activate your profile.</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 items-start">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent mt-0.5">
+                3
+              </div>
+              <div>
+                <p className="text-sm font-medium text-text-primary">Sign In</p>
+                <p className="text-xs text-text-muted">Return here and log in with your credentials to start sharing!</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-3">
+            <Link
+              href="/login"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/25 active:scale-[0.98]"
+            >
+              Go to sign in
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            
+            <button
+              onClick={() => window.location.reload()}
+              className="text-xs font-medium text-text-muted hover:text-text-secondary transition-colors py-2"
+            >
+              Didn't receive it? Try signing up again
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}

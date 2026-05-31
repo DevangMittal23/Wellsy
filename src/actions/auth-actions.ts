@@ -18,11 +18,20 @@ export async function signUp(
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
   const displayName = formData.get("display_name") as string;
   const username = formData.get("username") as string;
 
   if (!email || !password || !displayName || !username) {
     return { error: "All fields are required" };
+  }
+
+  if (confirmPassword && password !== confirmPassword) {
+    return { error: "Passwords do not match" };
+  }
+
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters" };
   }
 
   // Check username availability
@@ -59,6 +68,16 @@ export async function signUp(
       .eq("id", data.user.id);
   }
 
+  // Check if email confirmation is required
+  // When confirmation is required, data.session will be null
+  if (!data.session) {
+    return {
+      success: true,
+      message: `Account created! We've sent a confirmation email to ${email.toLowerCase()}. Please check your inbox (and spam folder) to verify your account before logging in.`,
+    };
+  }
+
+  // If we have a session immediately (no email confirmation required), redirect to feed
   revalidatePath("/", "layout");
   redirect("/feed");
 }

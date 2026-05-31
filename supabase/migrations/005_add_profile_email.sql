@@ -62,3 +62,15 @@ BEGIN
     RETURN user_email;
 END;
 $$;
+
+-- Backfill missing profiles for existing auth users who don't have one
+INSERT INTO public.profiles (id, username, display_name, email)
+SELECT 
+    u.id,
+    COALESCE(u.raw_user_meta_data ->> 'username', 'user_' || SUBSTR(u.id::text, 1, 8)),
+    COALESCE(u.raw_user_meta_data ->> 'display_name', 'User'),
+    u.email
+FROM auth.users u
+LEFT JOIN public.profiles p ON p.id = u.id
+WHERE p.id IS NULL
+ON CONFLICT (id) DO NOTHING;
