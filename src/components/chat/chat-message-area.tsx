@@ -80,7 +80,7 @@ export function ChatMessageArea({
   const displayMessages = messages.length > 0 ? messages : initialMessages;
 
   return (
-    <div className="flex h-[calc(100dvh-80px)] lg:h-[calc(100dvh-48px)] flex-col -mx-4 -mt-4 lg:-mt-6">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border bg-background-secondary/80 backdrop-blur-lg px-4 py-3">
         <Link
@@ -185,7 +185,9 @@ export function ChatMessageArea({
               <span className="h-1.5 w-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: "150ms" }} />
               <span className="h-1.5 w-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: "300ms" }} />
             </div>
-            <span>Someone is typing...</span>
+            <span>
+              {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing...
+            </span>
           </motion.div>
         )}
       </div>

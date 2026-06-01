@@ -3,10 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useChatStore } from "@/stores/chat-store";
+import { useAuth } from "@/hooks/use-auth";
 import { getRoomMessages, sendMessage as apiSendMessage } from "@/actions/chat-actions";
 import type { Message } from "@/types/chat";
 
 export function useChat(roomId: string, userId: string | undefined) {
+  const { user: currentUser } = useAuth();
   const {
     messages,
     setMessages,
@@ -99,6 +101,27 @@ export function useChat(roomId: string, userId: string | undefined) {
           // Avoid duplicate inserts
           if (messagesRef.current.some((m) => m.id === newMessage.id)) return;
 
+          // Check if this is a real-time echo of our own optimistic message
+          const currentMsgs = useChatStore.getState().messages;
+          const optimisticMatch = currentMsgs.find(
+            (m) =>
+              m.sender_id === newMessage.sender_id &&
+              m.content === newMessage.content &&
+              m.id.startsWith("temp-")
+          );
+
+          if (optimisticMatch) {
+            // Reconcile and replace the optimistic message's ID with the database UUID
+            setMessages(
+              currentMsgs.map((m) =>
+                m.id === optimisticMatch.id
+                  ? { ...newMessage, profiles: currentUser || undefined }
+                  : m
+              )
+            );
+            return;
+          }
+
           // Fetch sender profile details
           const { data: profile } = await supabase
             .from("profiles")
@@ -146,15 +169,46 @@ export function useChat(roomId: string, userId: string | undefined) {
     // Stop typing indicator on message send
     sendTypingIndicator(false);
 
+    // Create optimistic message
+    const optimisticId = `temp-${Date.now()}`;
+    const optimisticMessage: any = {
+      id: optimisticId,
+      room_id: roomId,
+      sender_id: userId || "",
+      content,
+      message_type: "text",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_read: false,
+      profiles: currentUser || undefined,
+      isOptimistic: true,
+    };
+
+    // Add to UI immediately
+    addMessage(optimisticMessage);
+
     try {
       const res = await apiSendMessage(roomId, formData);
-      if (res?.error) return { error: res.error };
+      if (res?.error) {
+        // Remove optimistic message on error
+        const currentMsgs = useChatStore.getState().messages;
+        setMessages(currentMsgs.filter((m) => m.id !== optimisticId));
+        return { error: res.error };
+      }
       if (res?.message) {
-        addMessage(res.message);
+        // Replace the optimistic message with the actual message from database
+        const currentMsgs = useChatStore.getState().messages;
+        setMessages(
+          currentMsgs.map((m) =>
+            m.id === optimisticId ? res.message : m
+          )
+        );
       }
       return { success: true };
     } catch (err) {
       console.error("Error sending message:", err);
+      const currentMsgs = useChatStore.getState().messages;
+      setMessages(currentMsgs.filter((m) => m.id !== optimisticId));
       return { error: "Failed to send message" };
     }
   };
@@ -169,7 +223,7 @@ export function useChat(roomId: string, userId: string | undefined) {
       payload: {
         senderId: userId,
         isTyping: typing,
-        username: userId.substring(0, 8), // simplified identifier
+        username: currentUser?.display_name || currentUser?.username || userId.substring(0, 8),
       },
     });
   };

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getUserRooms, getOrCreateDMRoom } from "@/actions/chat-actions";
 import { getProfile } from "@/actions/profile-actions";
-import { ChatRoomList } from "@/components/chat/chat-room-list";
+import { ChatLayout } from "@/components/chat/chat-layout";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -43,19 +43,24 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
     }
   }
 
-  logDebug("ChatPage: Rendering ChatRoomList with user rooms...");
+  logDebug("ChatPage: Fetching user rooms...");
   const rooms = await getUserRooms();
   logDebug(`ChatPage: Found ${rooms.length} user rooms for listing.`);
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-primary">Messages</h1>
-        <p className="text-sm text-text-secondary">Your conversations</p>
+    <ChatLayout rooms={rooms}>
+      <div className="flex flex-1 flex-col items-center justify-center text-center p-6 bg-surface/5">
+        <div className="max-w-xs space-y-3">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/15 text-2xl text-accent shadow-sm shadow-accent/5 ring-8 ring-accent/5">
+            💬
+          </div>
+          <h3 className="text-base font-semibold text-text-primary">Your Messages</h3>
+          <p className="text-xs text-text-muted">
+            Select a conversation from the sidebar list to start chatting, or find friends to start a new chat.
+          </p>
+        </div>
       </div>
-
-      <ChatRoomList initialRooms={rooms} />
-    </div>
+    </ChatLayout>
   );
 }
 

@@ -55,9 +55,27 @@ export const useChatStore = create<ChatState>((set) => ({
     set({ rooms, totalUnread });
   },
   setActiveRoom: (roomId) => set({ activeRoomId: roomId }),
-  setMessages: (messages) => set({ messages }),
+  setMessages: (messages) =>
+    set(() => {
+      const seen = new Set<string>();
+      const unique = messages.filter((m) => {
+        if (seen.has(m.id)) return false;
+        seen.add(m.id);
+        return true;
+      });
+      return { messages: unique };
+    }),
   prependMessages: (older) =>
-    set((state) => ({ messages: [...older, ...state.messages] })),
+    set((state) => {
+      const combined = [...older, ...state.messages];
+      const seen = new Set<string>();
+      const unique = combined.filter((m) => {
+        if (seen.has(m.id)) return false;
+        seen.add(m.id);
+        return true;
+      });
+      return { messages: unique };
+    }),
   addMessage: (message) =>
     set((state) => {
       // Deduplicate

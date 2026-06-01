@@ -76,9 +76,9 @@ export function ChatRoomList({ initialRooms }: ChatRoomListProps) {
   }, [displayRooms]);
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col h-full space-y-5 overflow-hidden">
       {/* Search and Navigation Tabs header */}
-      <div className="space-y-4">
+      <div className="space-y-4 shrink-0">
         {/* Search Bar */}
         <div className="relative">
           <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-text-muted">
@@ -142,7 +142,7 @@ export function ChatRoomList({ initialRooms }: ChatRoomListProps) {
       </div>
 
       {/* Conversations List */}
-      <div className="space-y-2.5">
+      <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 scrollbar-thin">
         <AnimatePresence mode="popLayout" initial={false}>
           {filteredRooms.length > 0 ? (
             filteredRooms.map((room, index) => (

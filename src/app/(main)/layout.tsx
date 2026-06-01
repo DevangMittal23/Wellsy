@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/navigation/sidebar";
 import { BottomNav } from "@/components/navigation/bottom-nav";
+import { ContentContainer } from "@/components/navigation/content-container";
 
 export default function MainLayout({
   children,
@@ -7,15 +8,13 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh bg-background">
       {/* Desktop sidebar */}
       <Sidebar />
 
       {/* Main content area */}
-      <main className="flex-1 lg:ml-[260px]">
-        <div className="mx-auto max-w-2xl px-4 pb-20 pt-4 lg:pb-8 lg:pt-6">
-          {children}
-        </div>
+      <main className="flex-1 lg:ml-[260px] flex flex-col min-h-dvh">
+        <ContentContainer>{children}</ContentContainer>
       </main>
 
       {/* Mobile bottom nav */}

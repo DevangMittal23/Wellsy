@@ -395,7 +395,6 @@ export async function getPostComments(postId: string) {
     `
     )
     .eq("post_id", postId)
-    .is("parent_id", null)
     .order("created_at", { ascending: true });
 
   if (error) return [];

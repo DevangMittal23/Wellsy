@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getRoomInfo, getRoomMessages } from "@/actions/chat-actions";
+import { getRoomInfo, getRoomMessages, getUserRooms } from "@/actions/chat-actions";
 import { ChatMessageArea } from "@/components/chat/chat-message-area";
+import { ChatLayout } from "@/components/chat/chat-layout";
 import type { Message } from "@/types/chat";
 
 interface ChatRoomPageProps {
@@ -34,13 +35,18 @@ export default async function ChatRoomPage({ params }: ChatRoomPageProps) {
     notFound();
   }
 
-  const { messages } = await getRoomMessages(roomId);
+  const [{ messages }, rooms] = await Promise.all([
+    getRoomMessages(roomId),
+    getUserRooms(),
+  ]);
 
   return (
-    <ChatMessageArea
-      roomId={roomId}
-      initialMessages={messages as Message[]}
-      roomInfo={roomInfo}
-    />
+    <ChatLayout rooms={rooms} activeRoomId={roomId}>
+      <ChatMessageArea
+        roomId={roomId}
+        initialMessages={messages as Message[]}
+        roomInfo={roomInfo}
+      />
+    </ChatLayout>
   );
 }

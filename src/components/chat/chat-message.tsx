@@ -23,6 +23,7 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, isOwn, showAvatar }: ChatMessageProps) {
   const senderName = message.profiles?.display_name || "Unknown";
+  const isOptimistic = (message as any).isOptimistic;
 
   return (
     <div
@@ -53,10 +54,11 @@ export function ChatMessage({ message, isOwn, showAvatar }: ChatMessageProps) {
       {/* Bubble */}
       <div
         className={cn(
-          "group max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm",
+          "group max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm transition-all duration-300",
           isOwn
             ? "rounded-tr-md bg-accent text-white"
-            : "rounded-tl-md bg-surface border border-border-subtle text-text-primary"
+            : "rounded-tl-md bg-surface border border-border-subtle text-text-primary",
+          isOptimistic && "opacity-60 animate-pulse bg-accent/85"
         )}
       >
         {message.message_type === "text" && (
@@ -77,7 +79,7 @@ export function ChatMessage({ message, isOwn, showAvatar }: ChatMessageProps) {
             isOwn ? "text-white/60" : "text-text-muted"
           )}
         >
-          {formatRelativeTime(message.created_at)}
+          {isOptimistic ? "Sending..." : formatRelativeTime(message.created_at)}
         </p>
       </div>
     </div>
