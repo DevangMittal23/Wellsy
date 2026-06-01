@@ -8,9 +8,20 @@ import {
   MoreHorizontal,
   Trash2,
   Check,
+  Send,
+  Loader2,
+  MessageSquare,
 } from "lucide-react";
 import { formatRelativeTime, cn, getInitials } from "@/lib/utils";
-import { likePost, unlikePost, savePost, unsavePost, deletePost } from "@/actions/post-actions";
+import {
+  likePost,
+  unlikePost,
+  savePost,
+  unsavePost,
+  deletePost,
+  createComment,
+  getPostComments,
+} from "@/actions/post-actions";
 import { useFeedStore } from "@/stores/feed-store";
 import { useAuth } from "@/hooks/use-auth";
 import type { Post } from "@/types/post";
@@ -27,6 +38,14 @@ export function PostCard({ post }: PostCardProps) {
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // Comments state
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(post.comments_count);
 
   const isOwner = user?.id === post.user_id;
   const profile = post.profiles;
@@ -78,6 +97,45 @@ export function PostCard({ post }: PostCardProps) {
       console.error("Clipboard copy failed", err);
     }
   }, [post.id]);
+
+  const toggleComments = useCallback(async () => {
+    const nextShow = !showComments;
+    setShowComments(nextShow);
+
+    if (nextShow && comments.length === 0) {
+      setLoadingComments(true);
+      try {
+        const list = await getPostComments(post.id);
+        setComments(list);
+      } catch (err) {
+        console.error("Failed to load comments:", err);
+      } finally {
+        setLoadingComments(false);
+      }
+    }
+  }, [showComments, comments.length, post.id]);
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    const formData = new FormData();
+    formData.append("content", commentText.trim());
+
+    try {
+      const res = await createComment(post.id, formData);
+      if (res && res.comment) {
+        setComments((prev) => [...prev, res.comment]);
+        setCommentText("");
+        setCommentsCount((prev) => prev + 1);
+      }
+    } catch (err) {
+      console.error("Failed to post comment:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Double-tap like
   const handleDoubleTap = useCallback(() => {
@@ -235,13 +293,13 @@ export function PostCard({ post }: PostCardProps) {
       )}
 
       {/* Interactions */}
-      <div className="flex items-center gap-1 px-3 py-3">
+      <div className="flex items-center gap-1 px-3 py-3 border-b border-border/20">
         {/* Like */}
         <button
           onClick={handleLike}
           disabled={isPending}
           className={cn(
-            "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+            "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
             post.has_liked
               ? "text-rose-400"
               : "text-text-muted hover:text-rose-400 hover:bg-rose-400/10"
@@ -262,12 +320,18 @@ export function PostCard({ post }: PostCardProps) {
 
         {/* Comment */}
         <button
-          className="group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:text-info hover:bg-info/10"
+          onClick={toggleComments}
+          className={cn(
+            "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
+            showComments
+              ? "text-accent bg-accent/10 font-medium"
+              : "text-text-muted hover:text-info hover:bg-info/10"
+          )}
           aria-label="Comment on post"
         >
           <MessageCircle className="h-[18px] w-[18px]" />
-          {post.comments_count > 0 && (
-            <span className="text-xs font-medium">{post.comments_count}</span>
+          {commentsCount > 0 && (
+            <span className="text-xs font-medium">{commentsCount}</span>
           )}
         </button>
 
@@ -276,7 +340,7 @@ export function PostCard({ post }: PostCardProps) {
           onClick={handleSave}
           disabled={isPending}
           className={cn(
-            "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+            "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
             post.has_saved
               ? "text-amber-400"
               : "text-text-muted hover:text-amber-400 hover:bg-amber-400/10"
@@ -295,7 +359,7 @@ export function PostCard({ post }: PostCardProps) {
         <button
           onClick={handleShare}
           className={cn(
-            "group ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+            "group ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
             copied
               ? "text-success bg-success/10"
               : "text-text-muted hover:text-accent hover:bg-accent/10"
@@ -312,6 +376,111 @@ export function PostCard({ post }: PostCardProps) {
           )}
         </button>
       </div>
+
+      {/* Comments Section Drawer Expand */}
+      <AnimatePresence initial={false}>
+        {showComments && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden bg-surface/15"
+          >
+            <div className="px-5 py-4 space-y-4">
+              {/* Comment input form */}
+              <form onSubmit={handleCommentSubmit} className="flex gap-3">
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.display_name}
+                    className="h-8.5 w-8.5 rounded-full object-cover ring-1 ring-border shrink-0"
+                  />
+                ) : (
+                  <div className="flex h-8.5 w-8.5 items-center justify-center rounded-full bg-accent-muted text-xs font-semibold text-accent ring-1 ring-border shrink-0">
+                    {user ? getInitials(user.display_name) : "?"}
+                  </div>
+                )}
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Write a comment..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="w-full rounded-xl border border-border/50 bg-surface/50 py-2.5 pl-4 pr-10 text-xs text-text-primary placeholder:text-text-muted outline-none transition-all duration-200 focus:border-accent/60 focus:bg-surface focus:shadow-glow"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!commentText.trim() || isSubmitting}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-accent disabled:text-text-muted transition-colors cursor-pointer"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              {/* Comments view list */}
+              <div className="space-y-4 max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
+                {loadingComments ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-accent" />
+                  </div>
+                ) : comments.length > 0 ? (
+                  comments.map((c) => (
+                    <motion.div
+                      key={c.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex gap-3"
+                    >
+                      {c.profiles?.avatar_url ? (
+                        <img
+                          src={c.profiles.avatar_url}
+                          alt={c.profiles.display_name}
+                          className="h-8 w-8 rounded-full object-cover ring-1 ring-border shrink-0"
+                        />
+                      ) : (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-muted text-xs font-bold text-accent ring-1 ring-border shrink-0">
+                          {getInitials(c.profiles?.display_name || "User")}
+                        </div>
+                      )}
+                      <div className="flex-1 rounded-2xl bg-surface/40 px-3.5 py-2.5 border border-border/20">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-baseline gap-1.5 min-w-0">
+                            <span className="text-xs font-semibold text-text-primary truncate">
+                              {c.profiles?.display_name}
+                            </span>
+                            <span className="text-[10px] text-text-muted truncate hidden sm:inline">
+                              @{c.profiles?.username}
+                            </span>
+                          </div>
+                          <span className="text-[9px] text-text-muted shrink-0">
+                            {formatRelativeTime(c.created_at)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
+                          {c.content}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="py-6 text-center">
+                    <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-surface border border-border/40 text-text-muted">
+                      <MessageSquare className="h-4.5 w-4.5" />
+                    </div>
+                    <p className="text-xs text-text-muted">No comments yet. Say something!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.article>
   );
 }

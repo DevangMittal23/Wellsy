@@ -16,6 +16,8 @@ export function useChat(roomId: string, userId: string | undefined) {
     setLoading,
     hasMore,
     setHasMore,
+    setActiveRoom,
+    markRoomRead,
   } = useChatStore();
 
   const [isTyping, setIsTyping] = useState(false);
@@ -69,6 +71,10 @@ export function useChat(roomId: string, userId: string | undefined) {
   // Handle real-time messaging and typing indicators broadcast
   useEffect(() => {
     if (!roomId || !userId) return;
+
+    // Immediately set active room and mark it read on mount
+    setActiveRoom(roomId);
+    markRoomRead(roomId);
 
     // Clear previous messages to avoid flash of stale content
     setMessages([]);
@@ -125,8 +131,10 @@ export function useChat(roomId: string, userId: string | undefined) {
 
     return () => {
       supabase.removeChannel(channel);
+      // Reset active room on unmount
+      setActiveRoom(null);
     };
-  }, [roomId, userId, addMessage, fetchMessages]);
+  }, [roomId, userId, addMessage, fetchMessages, setActiveRoom, markRoomRead]);
 
   // Send message action
   const sendMessage = async (content: string) => {

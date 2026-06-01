@@ -46,3 +46,42 @@
 [2026-06-01T08:08:14.878Z] ChatPage rendering with searchParams.user = undefined
 [2026-06-01T08:08:14.878Z] ChatPage: Rendering ChatRoomList with user rooms...
 [2026-06-01T08:08:16.450Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:17:34.527Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:17:34.528Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:17:36.104Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:17:37.885Z] getRoomInfo called for roomId: 8dd41cd2-8e57-410b-af82-0d377ffc6782
+[2026-06-01T08:17:37.901Z] getRoomInfo called for roomId: 8dd41cd2-8e57-410b-af82-0d377ffc6782
+[2026-06-01T08:17:37.993Z] getRoomInfo: Logged in user is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:17:37.994Z] getRoomInfo: Logged in user is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:17:38.072Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:17:38.073Z] getRoomInfo: otherMember user_id is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:17:38.074Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:17:38.074Z] getRoomInfo: otherMember user_id is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:17:42.524Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:17:42.525Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:17:42.847Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:17:46.462Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:17:46.462Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:17:48.034Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:18:14.621Z] getOrCreateDMRoom called for targetUserId: 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:18:14.678Z] Logged in user: def3f51c-391c-4ee2-904e-621ddfee1d8e (mittaldevang0159@gmail.com)
+[2026-06-01T08:18:14.679Z] Checking existing rooms for logged in user...
+[2026-06-01T08:18:14.737Z] Found user rooms: ["1ea9f804-6068-4107-817a-fec9e73ed56d","e0d1e81d-fca3-4cb3-94e2-ccf9c64d0ac9","18aa3beb-6d7f-4325-bb2d-1ab08d3380e1","053d85a8-26ba-4508-b459-719a8ceeaff0","ae4c0535-3587-4f84-9627-cbcfcff055d0","c3486d09-94d5-4833-be51-75567826436d","e4d1301f-1391-4f76-bfb4-19ffd362407c","8dd41cd2-8e57-410b-af82-0d377ffc6782","510e76d4-e3c0-4eeb-84c5-a845a086fbf0","bd033f34-f4b3-4b97-89ab-1c1ac84c1b76"]
+[2026-06-01T08:18:14.737Z] Checking shared rooms with target user 36f07107-a2f1-4ee4-9964-fa5271586d1e...
+[2026-06-01T08:18:14.792Z] Found shared rooms: [{"room_id":"053d85a8-26ba-4508-b459-719a8ceeaff0"},{"room_id":"18aa3beb-6d7f-4325-bb2d-1ab08d3380e1"},{"room_id":"1ea9f804-6068-4107-817a-fec9e73ed56d"},{"room_id":"510e76d4-e3c0-4eeb-84c5-a845a086fbf0"},{"room_id":"8dd41cd2-8e57-410b-af82-0d377ffc6782"},{"room_id":"ae4c0535-3587-4f84-9627-cbcfcff055d0"},{"room_id":"bd033f34-f4b3-4b97-89ab-1c1ac84c1b76"},{"room_id":"c3486d09-94d5-4833-be51-75567826436d"},{"room_id":"e0d1e81d-fca3-4cb3-94e2-ccf9c64d0ac9"},{"room_id":"e4d1301f-1391-4f76-bfb4-19ffd362407c"}]
+[2026-06-01T08:18:14.793Z] Checking room properties for room 053d85a8-26ba-4508-b459-719a8ceeaff0...
+[2026-06-01T08:18:14.850Z] Found existing non-group DM room: 053d85a8-26ba-4508-b459-719a8ceeaff0. Returning.
+[2026-06-01T08:18:14.989Z] getRoomInfo called for roomId: 053d85a8-26ba-4508-b459-719a8ceeaff0
+[2026-06-01T08:18:15.005Z] getRoomInfo called for roomId: 053d85a8-26ba-4508-b459-719a8ceeaff0
+[2026-06-01T08:18:15.096Z] getRoomInfo: Logged in user is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:18:15.097Z] getRoomInfo: Logged in user is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:18:15.176Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:18:15.177Z] getRoomInfo: otherMember user_id is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:18:15.177Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:18:15.178Z] getRoomInfo: otherMember user_id is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:18:17.993Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:18:17.993Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:18:18.318Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:22:17.165Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:22:17.165Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:22:17.743Z] ChatPage: Found 1 user rooms for listing.

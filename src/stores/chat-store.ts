@@ -50,7 +50,10 @@ export const useChatStore = create<ChatState>((set) => ({
   isLoading: false,
   hasMore: true,
   totalUnread: 0,
-  setRooms: (rooms) => set({ rooms }),
+  setRooms: (rooms) => {
+    const totalUnread = rooms.reduce((acc, r) => acc + (r.unread_count || 0), 0);
+    set({ rooms, totalUnread });
+  },
   setActiveRoom: (roomId) => set({ activeRoomId: roomId }),
   setMessages: (messages) => set({ messages }),
   prependMessages: (older) =>
@@ -65,8 +68,8 @@ export const useChatStore = create<ChatState>((set) => ({
   setHasMore: (hasMore) => set({ hasMore }),
   setTotalUnread: (totalUnread) => set({ totalUnread }),
   updateRoomPreview: (roomId, message) =>
-    set((state) => ({
-      rooms: state.rooms.map((r) =>
+    set((state) => {
+      const updatedRooms = state.rooms.map((r) =>
         r.id === roomId
           ? {
               ...r,
@@ -84,14 +87,18 @@ export const useChatStore = create<ChatState>((set) => ({
                   : (r.unread_count || 0) + 1,
             }
           : r
-      ),
-    })),
+      );
+      const totalUnread = updatedRooms.reduce((acc, r) => acc + (r.unread_count || 0), 0);
+      return { rooms: updatedRooms, totalUnread };
+    }),
   markRoomRead: (roomId) =>
-    set((state) => ({
-      rooms: state.rooms.map((r) =>
+    set((state) => {
+      const updatedRooms = state.rooms.map((r) =>
         r.id === roomId ? { ...r, unread_count: 0 } : r
-      ),
-    })),
+      );
+      const totalUnread = updatedRooms.reduce((acc, r) => acc + (r.unread_count || 0), 0);
+      return { rooms: updatedRooms, totalUnread };
+    }),
   reset: () =>
     set({
       rooms: [],
@@ -99,5 +106,6 @@ export const useChatStore = create<ChatState>((set) => ({
       messages: [],
       isLoading: false,
       hasMore: true,
+      totalUnread: 0,
     }),
 }));

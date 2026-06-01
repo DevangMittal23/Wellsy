@@ -401,3 +401,132 @@ export async function getPostComments(postId: string) {
   if (error) return [];
   return comments;
 }
+
+export async function getLikedPosts(userId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { posts: [] };
+
+  // Fetch liked post references
+  const { data: likedRefs, error: refError } = await supabase
+    .from("likes")
+    .select("post_id")
+    .eq("user_id", userId);
+
+  if (refError || !likedRefs || likedRefs.length === 0) return { posts: [] };
+
+  const postIds = likedRefs.map((l) => l.post_id);
+
+  // Fetch actual posts
+  const { data: posts, error } = await supabase
+    .from("posts")
+    .select(
+      `
+      *,
+      profiles!posts_user_id_fkey (
+        id, username, display_name, avatar_url, is_online
+      ),
+      post_media (
+        id, url, media_type, width, height, thumbnail_url, sort_order
+      )
+    `
+    )
+    .in("id", postIds)
+    .eq("is_draft", false)
+    .order("created_at", { ascending: false });
+
+  if (error || !posts) return { posts: [] };
+
+  // Enrich with active like/save states for current logged in user
+  const [{ data: userLikes }, { data: userSaves }] = await Promise.all([
+    supabase
+      .from("likes")
+      .select("post_id")
+      .eq("user_id", user.id)
+      .in("post_id", postIds),
+    supabase
+      .from("saved_posts")
+      .select("post_id")
+      .eq("user_id", user.id)
+      .in("post_id", postIds),
+  ]);
+
+  const likedPostIds = new Set(userLikes?.map((l) => l.post_id) || []);
+  const savedPostIds = new Set(userSaves?.map((s) => s.post_id) || []);
+
+  const enrichedPosts = posts.map((post) => ({
+    ...post,
+    has_liked: likedPostIds.has(post.id),
+    has_saved: savedPostIds.has(post.id),
+  }));
+
+  return { posts: enrichedPosts };
+}
+
+export async function getSavedPosts() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { posts: [] };
+
+  // Fetch saved post references for the current user
+  const { data: savedRefs, error: refError } = await supabase
+    .from("saved_posts")
+    .select("post_id")
+    .eq("user_id", user.id);
+
+  if (refError || !savedRefs || savedRefs.length === 0) return { posts: [] };
+
+  const postIds = savedRefs.map((s) => s.post_id);
+
+  // Fetch actual posts
+  const { data: posts, error } = await supabase
+    .from("posts")
+    .select(
+      `
+      *,
+      profiles!posts_user_id_fkey (
+        id, username, display_name, avatar_url, is_online
+      ),
+      post_media (
+        id, url, media_type, width, height, thumbnail_url, sort_order
+      )
+    `
+    )
+    .in("id", postIds)
+    .eq("is_draft", false)
+    .order("created_at", { ascending: false });
+
+  if (error || !posts) return { posts: [] };
+
+  // Enrich with active states
+  const [{ data: userLikes }, { data: userSaves }] = await Promise.all([
+    supabase
+      .from("likes")
+      .select("post_id")
+      .eq("user_id", user.id)
+      .in("post_id", postIds),
+    supabase
+      .from("saved_posts")
+      .select("post_id")
+      .eq("user_id", user.id)
+      .in("post_id", postIds),
+  ]);
+
+  const likedPostIds = new Set(userLikes?.map((l) => l.post_id) || []);
+  const savedPostIds = new Set(userSaves?.map((s) => s.post_id) || []);
+
+  const enrichedPosts = posts.map((post) => ({
+    ...post,
+    has_liked: likedPostIds.has(post.id),
+    has_saved: savedPostIds.has(post.id),
+  }));
+
+  return { posts: enrichedPosts };
+}
+
