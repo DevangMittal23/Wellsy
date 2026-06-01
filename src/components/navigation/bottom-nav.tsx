@@ -3,15 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Home, Search, PlusSquare, Bell, User } from "lucide-react";
+import { Home, Search, PlusSquare, Bell, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useNotificationStore } from "@/stores/notification-store";
 import { useChatStore } from "@/stores/chat-store";
+import { getPendingFriendRequests } from "@/actions/friend-actions";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { href: "/feed", icon: Home, label: "Feed", badgeKey: null },
-  { href: "/search", icon: Search, label: "Search", badgeKey: null },
+  { href: "/friends", icon: Users, label: "Friends", badgeKey: "friends" as const },
   { href: "/feed?create=true", icon: PlusSquare, label: "Create", isCreate: true, badgeKey: null },
   { href: "/notifications", icon: Bell, label: "Alerts", badgeKey: "notifications" as const },
   { href: "/profile", icon: User, label: "Profile", isDynamic: true, badgeKey: null },
@@ -22,10 +24,23 @@ export function BottomNav() {
   const { user } = useAuth();
   const { unreadCount: notifUnread } = useNotificationStore();
   const { totalUnread: chatUnread } = useChatStore();
+  const [friendsUnread, setFriendsUnread] = useState(0);
 
-  const getBadgeCount = (key: "chat" | "notifications" | null) => {
+  // Fetch pending requests count on mount
+  useEffect(() => {
+    async function fetchFriendsCount() {
+      const pending = await getPendingFriendRequests();
+      setFriendsUnread(pending?.length || 0);
+    }
+    if (user?.id) {
+      fetchFriendsCount();
+    }
+  }, [user?.id]);
+
+  const getBadgeCount = (key: "chat" | "notifications" | "friends" | null) => {
     if (key === "notifications") return notifUnread;
     if (key === "chat") return chatUnread;
+    if (key === "friends") return friendsUnread;
     return 0;
   };
 

@@ -256,3 +256,27 @@ export async function getSuggestedPeople() {
   // Filter out excluded users
   return profiles.filter((p) => !excludeIds.has(p.id));
 }
+
+export async function getFriends() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("friends")
+    .select(`
+      id,
+      created_at,
+      friend:friend_id (
+        id, username, display_name, avatar_url, bio, is_online, last_seen
+      )
+    `)
+    .eq("user_id", user.id);
+
+  if (error || !data) return [];
+
+  return data.map((f: any) => f.friend).filter(Boolean);
+}

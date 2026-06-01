@@ -2,13 +2,13 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Send, Loader2 } from "lucide-react";
-import { sendMessage } from "@/actions/chat-actions";
 
 interface ChatInputProps {
-  roomId: string;
+  onSendMessage: (content: string) => Promise<any>;
+  onTyping: () => void;
 }
 
-export function ChatInput({ roomId }: ChatInputProps) {
+export function ChatInput({ onSendMessage, onTyping }: ChatInputProps) {
   const [content, setContent] = useState("");
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -17,11 +17,8 @@ export function ChatInput({ roomId }: ChatInputProps) {
     e.preventDefault();
     if (!content.trim() || isPending) return;
 
-    const formData = new FormData();
-    formData.append("content", content.trim());
-
     startTransition(async () => {
-      await sendMessage(roomId, formData);
+      await onSendMessage(content.trim());
       setContent("");
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
@@ -34,6 +31,11 @@ export function ChatInput({ roomId }: ChatInputProps) {
       e.preventDefault();
       handleSubmit(e);
     }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+    onTyping(); // Trigger typing indicator broadcast
   };
 
   const handleInput = () => {
@@ -52,7 +54,7 @@ export function ChatInput({ roomId }: ChatInputProps) {
       <textarea
         ref={textareaRef}
         value={content}
-        onChange={(e) => setContent(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         onInput={handleInput}
         placeholder="Type a message..."

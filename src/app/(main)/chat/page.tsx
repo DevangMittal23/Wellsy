@@ -1,13 +1,31 @@
 import type { Metadata } from "next";
-import { getUserRooms } from "@/actions/chat-actions";
+import { getUserRooms, getOrCreateDMRoom } from "@/actions/chat-actions";
+import { getProfile } from "@/actions/profile-actions";
 import { ChatRoomList } from "@/components/chat/chat-room-list";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Chat",
   description: "Your conversations on WELLSY.",
 };
 
-export default async function ChatPage() {
+interface ChatPageProps {
+  searchParams: Promise<{ user?: string }>;
+}
+
+export default async function ChatPage({ searchParams }: ChatPageProps) {
+  const { user: username } = await searchParams;
+
+  if (username) {
+    const profile = await getProfile(username);
+    if (profile) {
+      const res = await getOrCreateDMRoom(profile.id);
+      if (res && "roomId" in res && res.roomId) {
+        redirect(`/chat/${res.roomId}`);
+      }
+    }
+  }
+
   const rooms = await getUserRooms();
 
   return (
@@ -21,3 +39,4 @@ export default async function ChatPage() {
     </div>
   );
 }
+

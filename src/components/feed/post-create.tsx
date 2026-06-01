@@ -7,6 +7,7 @@ import { createPost } from "@/actions/post-actions";
 import { useFeedStore } from "@/stores/feed-store";
 import { useAuth } from "@/hooks/use-auth";
 import { getInitials } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const MAX_CHARS = 2000;
 
@@ -17,6 +18,7 @@ export function PostCreate() {
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,6 +32,7 @@ export function PostCreate() {
     const newPreviews = files.map((file) => URL.createObjectURL(file));
     setMediaFiles((prev) => [...prev, ...files]);
     setMediaPreviews((prev) => [...prev, ...newPreviews]);
+    setError(null);
   };
 
   const removeMedia = (index: number) => {
@@ -40,19 +43,76 @@ export function PostCreate() {
 
   const handleSubmit = () => {
     if (!content.trim() && mediaFiles.length === 0) return;
+    if (!user) {
+      setError("You must be logged in to create a post.");
+      return;
+    }
+
+    setError(null);
 
     const formData = new FormData();
     formData.set("content", content);
-    formData.set("post_type", mediaFiles.length > 0 ? "image" : "text");
+    const isVideo = mediaFiles.some((file) => file.type.startsWith("video/"));
+    formData.set("post_type", mediaFiles.length > 0 ? (isVideo ? "video" : "image") : "text");
 
     startTransition(async () => {
-      const result = await createPost(formData);
-      if (result.post) {
-        prependPost(result.post);
-        setContent("");
-        setMediaFiles([]);
-        setMediaPreviews([]);
-        setIsExpanded(false);
+      try {
+        if (mediaFiles.length > 0) {
+          const supabase = createClient();
+          const mediaUrls: string[] = [];
+
+          for (const file of mediaFiles) {
+            const fileExt = file.name.split(".").pop();
+            const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage
+              .from("posts")
+              .upload(fileName, file);
+
+            if (uploadError) {
+              throw new Error(`Failed to upload media: ${uploadError.message}`);
+            }
+
+            const { data } = supabase.storage.from("posts").getPublicUrl(fileName);
+            if (data?.publicUrl) {
+              mediaUrls.push(data.publicUrl);
+            }
+          }
+
+          // Append each url to formData
+          mediaUrls.forEach((url) => {
+            formData.append("media_urls", url);
+          });
+        }
+
+        const result = await createPost(formData);
+        if (result.error) {
+          setError(result.error);
+        } else if (result.post) {
+          // If mediaUrls were uploaded, let's include them in the optimistic feed update
+          const mediaUrls = formData.getAll("media_urls") as string[];
+          const postMedia = mediaUrls.map((url, index) => ({
+            id: `temp-media-${index}-${Date.now()}`,
+            url,
+            media_type: isVideo ? "video" : "image",
+            width: null,
+            height: null,
+            thumbnail_url: null,
+            sort_order: index,
+          }));
+
+          prependPost({
+            ...result.post,
+            post_media: postMedia,
+          });
+          setContent("");
+          setMediaFiles([]);
+          setMediaPreviews([]);
+          setIsExpanded(false);
+        }
+      } catch (err: any) {
+        console.error("Error creating post:", err);
+        setError(err.message || "Failed to create post.");
       }
     });
   };
@@ -125,6 +185,12 @@ export function PostCreate() {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {error && (
+                <div className="mt-3 text-sm text-error bg-error/10 p-2.5 rounded-xl border border-error/20 font-medium">
+                  {error}
                 </div>
               )}
 

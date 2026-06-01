@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   PlusSquare,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useNotificationStore } from "@/stores/notification-store";
@@ -21,13 +22,15 @@ import { useChatRooms } from "@/hooks/use-chat-rooms";
 import { signOut } from "@/actions/auth-actions";
 import { getUnreadNotificationCount } from "@/actions/notification-actions";
 import { getTotalUnreadMessages } from "@/actions/chat-actions";
+import { getPendingFriendRequests } from "@/actions/friend-actions";
 import { cn, getInitials } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { href: "/feed", icon: Home, label: "Feed", badgeKey: null },
   { href: "/search", icon: Search, label: "Search", badgeKey: null },
-  { href: "/discover", icon: Users, label: "Discover", badgeKey: null },
+  { href: "/discover", icon: Sparkles, label: "Discover", badgeKey: null },
+  { href: "/friends", icon: Users, label: "Friends", badgeKey: "friends" as const },
   { href: "/chat", icon: MessageCircle, label: "Chat", badgeKey: "chat" as const },
   { href: "/notifications", icon: Bell, label: "Notifications", badgeKey: "notifications" as const },
 ];
@@ -37,6 +40,7 @@ export function Sidebar() {
   const { user } = useAuth();
   const { unreadCount: notifUnread, setUnreadCount: setNotifUnread } = useNotificationStore();
   const { totalUnread: chatUnread, setTotalUnread: setChatUnread } = useChatStore();
+  const [friendsUnread, setFriendsUnread] = useState(0);
 
   // Subscribe to realtime updates
   useRealtimeNotifications(user?.id);
@@ -45,21 +49,24 @@ export function Sidebar() {
   // Fetch initial unread counts
   useEffect(() => {
     async function fetchCounts() {
-      const [notifCount, chatCount] = await Promise.all([
+      const [notifCount, chatCount, pendingRequests] = await Promise.all([
         getUnreadNotificationCount(),
         getTotalUnreadMessages(),
+        getPendingFriendRequests(),
       ]);
       setNotifUnread(notifCount);
       setChatUnread(chatCount);
+      setFriendsUnread(pendingRequests?.length || 0);
     }
     if (user?.id) {
       fetchCounts();
     }
   }, [user?.id, setNotifUnread, setChatUnread]);
 
-  const getBadgeCount = (key: "chat" | "notifications" | null) => {
+  const getBadgeCount = (key: "chat" | "notifications" | "friends" | null) => {
     if (key === "notifications") return notifUnread;
     if (key === "chat") return chatUnread;
+    if (key === "friends") return friendsUnread;
     return 0;
   };
 
