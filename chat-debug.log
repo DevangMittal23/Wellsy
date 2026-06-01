@@ -1,0 +1,48 @@
+[2026-06-01T08:01:03.780Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:01:03.781Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:01:05.709Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:01:15.852Z] getRoomInfo called for roomId: 8dd41cd2-8e57-410b-af82-0d377ffc6782
+[2026-06-01T08:01:15.864Z] getRoomInfo called for roomId: 8dd41cd2-8e57-410b-af82-0d377ffc6782
+[2026-06-01T08:01:15.945Z] getRoomInfo: Logged in user is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:01:15.946Z] getRoomInfo: Logged in user is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:01:16.063Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:01:16.066Z] getRoomInfo: otherMember user_id is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:01:16.067Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:01:16.067Z] getRoomInfo: otherMember user_id is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:01:31.741Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:01:31.742Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:01:33.280Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:02:16.280Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:02:16.281Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:02:17.856Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:02:22.246Z] getRoomInfo called for roomId: 8dd41cd2-8e57-410b-af82-0d377ffc6782
+[2026-06-01T08:02:22.254Z] getRoomInfo called for roomId: 8dd41cd2-8e57-410b-af82-0d377ffc6782
+[2026-06-01T08:02:22.568Z] getRoomInfo: Logged in user is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:02:22.569Z] getRoomInfo: Logged in user is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:02:22.896Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:02:22.896Z] getRoomInfo: otherMember user_id is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:02:22.897Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:02:22.897Z] getRoomInfo: otherMember user_id is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:02:35.676Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:02:35.676Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:02:35.958Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:03:46.925Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:03:46.925Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:03:47.478Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:03:51.148Z] getRoomInfo called for roomId: 8dd41cd2-8e57-410b-af82-0d377ffc6782
+[2026-06-01T08:03:51.157Z] getRoomInfo called for roomId: 8dd41cd2-8e57-410b-af82-0d377ffc6782
+[2026-06-01T08:03:51.244Z] getRoomInfo: Logged in user is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:03:51.244Z] getRoomInfo: Logged in user is def3f51c-391c-4ee2-904e-621ddfee1d8e
+[2026-06-01T08:03:51.374Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:03:51.374Z] getRoomInfo: otherMember user_id is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:03:51.375Z] getRoomInfo: Room found! Members: ["def3f51c-391c-4ee2-904e-621ddfee1d8e","36f07107-a2f1-4ee4-9964-fa5271586d1e"]
+[2026-06-01T08:03:51.375Z] getRoomInfo: otherMember user_id is 36f07107-a2f1-4ee4-9964-fa5271586d1e
+[2026-06-01T08:03:55.453Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:03:55.453Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:03:55.805Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:04:20.968Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:04:20.968Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:04:22.496Z] ChatPage: Found 1 user rooms for listing.
+[2026-06-01T08:08:14.878Z] ChatPage rendering with searchParams.user = undefined
+[2026-06-01T08:08:14.878Z] ChatPage: Rendering ChatRoomList with user rooms...
+[2026-06-01T08:08:16.450Z] ChatPage: Found 1 user rooms for listing.

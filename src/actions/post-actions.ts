@@ -72,6 +72,9 @@ export async function getFeedPosts(cursor?: string) {
 
 export async function getUserPosts(userId: string, cursor?: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   let query = supabase
     .from("posts")
@@ -98,8 +101,34 @@ export async function getUserPosts(userId: string, cursor?: string) {
   const { data: posts, error } = await query;
   if (error || !posts) return { posts: [], hasMore: false };
 
+  let enrichedPosts = posts;
+  if (user && posts.length > 0) {
+    const postIds = posts.map((p) => p.id);
+    const [{ data: likes }, { data: saves }] = await Promise.all([
+      supabase
+        .from("likes")
+        .select("post_id")
+        .eq("user_id", user.id)
+        .in("post_id", postIds),
+      supabase
+        .from("saved_posts")
+        .select("post_id")
+        .eq("user_id", user.id)
+        .in("post_id", postIds),
+    ]);
+
+    const likedPostIds = new Set(likes?.map((l) => l.post_id) || []);
+    const savedPostIds = new Set(saves?.map((s) => s.post_id) || []);
+
+    enrichedPosts = posts.map((post) => ({
+      ...post,
+      has_liked: likedPostIds.has(post.id),
+      has_saved: savedPostIds.has(post.id),
+    }));
+  }
+
   return {
-    posts,
+    posts: enrichedPosts,
     hasMore: posts.length === POSTS_PER_PAGE,
   };
 }

@@ -14,19 +14,38 @@ interface ChatPageProps {
 }
 
 export default async function ChatPage({ searchParams }: ChatPageProps) {
+  const fs = require("fs");
+  const logDebug = (msg: string) => {
+    try {
+      fs.appendFileSync("d:\\Desktop\\projects\\messenger\\chat-debug.log", `[${new Date().toISOString()}] ${msg}\n`);
+    } catch (e) {}
+  };
+
   const { user: username } = await searchParams;
+  logDebug(`ChatPage rendering with searchParams.user = ${username || "undefined"}`);
 
   if (username) {
+    logDebug(`ChatPage: fetching profile for ${username}`);
     const profile = await getProfile(username);
     if (profile) {
+      logDebug(`ChatPage: found profile for ${username} (id: ${profile.id}). Calling getOrCreateDMRoom...`);
       const res = await getOrCreateDMRoom(profile.id);
+      logDebug(`ChatPage: getOrCreateDMRoom result = ${JSON.stringify(res)}`);
+
       if (res && "roomId" in res && res.roomId) {
+        logDebug(`ChatPage: Redirecting user to /chat/${res.roomId}`);
         redirect(`/chat/${res.roomId}`);
+      } else {
+        logDebug("ChatPage: getOrCreateDMRoom did not return a roomId");
       }
+    } else {
+      logDebug(`ChatPage: Profile not found for ${username}`);
     }
   }
 
+  logDebug("ChatPage: Rendering ChatRoomList with user rooms...");
   const rooms = await getUserRooms();
+  logDebug(`ChatPage: Found ${rooms.length} user rooms for listing.`);
 
   return (
     <div>

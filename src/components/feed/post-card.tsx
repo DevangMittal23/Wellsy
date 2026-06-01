@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useCallback, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,6 +7,7 @@ import {
   Share2,
   MoreHorizontal,
   Trash2,
+  Check,
 } from "lucide-react";
 import { formatRelativeTime, cn, getInitials } from "@/lib/utils";
 import { likePost, unlikePost, savePost, unsavePost, deletePost } from "@/actions/post-actions";
@@ -26,6 +25,7 @@ export function PostCard({ post }: PostCardProps) {
   const { toggleLike, toggleSave, removePost } = useFeedStore();
   const [showMenu, setShowMenu] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const isOwner = user?.id === post.user_id;
@@ -66,6 +66,18 @@ export function PostCard({ post }: PostCardProps) {
       await deletePost(post.id);
     });
   }, [post.id, removePost]);
+
+  const handleShare = useCallback(() => {
+    try {
+      navigator.clipboard.writeText(
+        `${window.location.origin}/post/${post.id}`
+      );
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Clipboard copy failed", err);
+    }
+  }, [post.id]);
 
   // Double-tap like
   const handleDoubleTap = useCallback(() => {
@@ -281,15 +293,23 @@ export function PostCard({ post }: PostCardProps) {
 
         {/* Share */}
         <button
-          onClick={() => {
-            navigator.clipboard.writeText(
-              `${window.location.origin}/post/${post.id}`
-            );
-          }}
-          className="group ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:text-accent hover:bg-accent/10"
+          onClick={handleShare}
+          className={cn(
+            "group ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+            copied
+              ? "text-success bg-success/10"
+              : "text-text-muted hover:text-accent hover:bg-accent/10"
+          )}
           aria-label="Share post"
         >
-          <Share2 className="h-[18px] w-[18px]" />
+          {copied ? (
+            <>
+              <Check className="h-[18px] w-[18px] text-success" />
+              <span className="text-[10.5px] font-semibold animate-fade-in text-success">Copied!</span>
+            </>
+          ) : (
+            <Share2 className="h-[18px] w-[18px]" />
+          )}
         </button>
       </div>
     </motion.article>

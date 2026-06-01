@@ -70,6 +70,8 @@ export function useChat(roomId: string, userId: string | undefined) {
   useEffect(() => {
     if (!roomId || !userId) return;
 
+    // Clear previous messages to avoid flash of stale content
+    setMessages([]);
     fetchMessages();
 
     const supabase = createClient();

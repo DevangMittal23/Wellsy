@@ -32,19 +32,19 @@ export default async function SettingsPage() {
       icon: Shield,
       title: "Privacy & Security",
       description: "Control your privacy settings",
-      href: null,
+      href: "/settings/privacy",
     },
     {
       icon: Bell,
       title: "Notifications",
       description: "Configure notification preferences",
-      href: null,
+      href: "/settings/notifications",
     },
     {
       icon: Palette,
       title: "Appearance",
       description: "Customize your experience",
-      href: null,
+      href: "/settings/appearance",
     },
   ];
 

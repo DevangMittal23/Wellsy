@@ -45,9 +45,28 @@ export async function getUserRooms() {
 
   if (roomError || !rooms) return [];
 
+  // Deduplicate rooms: if there are multiple DM rooms with the same user, keep only the most active one
+  const seenUsers = new Set<string>();
+  const deduplicatedRooms: typeof rooms = [];
+
+  for (const room of rooms) {
+    const otherMember = room.room_members?.find(
+      (m: { user_id: string }) => m.user_id !== user.id
+    );
+
+    if (!room.is_group && otherMember) {
+      if (seenUsers.has(otherMember.user_id)) {
+        // Skip duplicate empty or less active DM rooms with this user
+        continue;
+      }
+      seenUsers.add(otherMember.user_id);
+    }
+    deduplicatedRooms.push(room);
+  }
+
   // Get last message for each room
   const roomsWithPreview = await Promise.all(
-    rooms.map(async (room) => {
+    deduplicatedRooms.map(async (room) => {
       // Get last message
       const { data: lastMessages } = await supabase
         .from("messages")
@@ -94,67 +113,115 @@ export async function getUserRooms() {
 }
 
 export async function getOrCreateDMRoom(targetUserId: string) {
+  const fs = require("fs");
+  const logDebug = (msg: string) => {
+    try {
+      fs.appendFileSync("d:\\Desktop\\projects\\messenger\\chat-debug.log", `[${new Date().toISOString()}] ${msg}\n`);
+    } catch (e) {}
+  };
+
+  logDebug(`getOrCreateDMRoom called for targetUserId: ${targetUserId}`);
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { error: "Unauthorized" };
-  if (user.id === targetUserId) return { error: "Cannot message yourself" };
+  if (!user) {
+    logDebug("Error: Unauthorized (no user)");
+    return { error: "Unauthorized" };
+  }
+  
+  logDebug(`Logged in user: ${user.id} (${user.email})`);
+  if (user.id === targetUserId) {
+    logDebug("Error: Cannot message yourself");
+    return { error: "Cannot message yourself" };
+  }
 
   // Check if a DM room already exists between these two users
-  const { data: existingRooms } = await supabase
+  logDebug("Checking existing rooms for logged in user...");
+  const { data: existingRooms, error: existError } = await supabase
     .from("room_members")
     .select("room_id")
     .eq("user_id", user.id);
 
+  if (existError) {
+    logDebug(`Error fetching existing rooms: ${existError.message}`);
+  }
+
   if (existingRooms && existingRooms.length > 0) {
     const userRoomIds = existingRooms.map((r) => r.room_id);
+    logDebug(`Found user rooms: ${JSON.stringify(userRoomIds)}`);
 
-    const { data: sharedRooms } = await supabase
+    logDebug(`Checking shared rooms with target user ${targetUserId}...`);
+    const { data: sharedRooms, error: sharedError } = await supabase
       .from("room_members")
       .select("room_id")
       .eq("user_id", targetUserId)
       .in("room_id", userRoomIds);
 
+    if (sharedError) {
+      logDebug(`Error fetching shared rooms: ${sharedError.message}`);
+    }
+
     if (sharedRooms && sharedRooms.length > 0) {
+      logDebug(`Found shared rooms: ${JSON.stringify(sharedRooms)}`);
       // Check if any of these is a non-group room
       for (const sr of sharedRooms) {
-        const { data: room } = await supabase
+        logDebug(`Checking room properties for room ${sr.room_id}...`);
+        const { data: room, error: roomError } = await supabase
           .from("chat_rooms")
           .select("*")
           .eq("id", sr.room_id)
           .eq("is_group", false)
           .single();
 
+        if (roomError) {
+          logDebug(`Room query error for ${sr.room_id}: ${roomError.message}`);
+        }
+
         if (room) {
+          logDebug(`Found existing non-group DM room: ${room.id}. Returning.`);
           return { roomId: room.id };
         }
       }
+    } else {
+      logDebug("No shared rooms with target user.");
     }
+  } else {
+    logDebug("Logged in user has no existing chat rooms.");
   }
 
   // Create new DM room
-  const { data: newRoom, error: roomError } = await supabase
+  const roomId = crypto.randomUUID();
+  logDebug(`Creating new DM room: ${roomId}...`);
+  const { error: roomError } = await supabase
     .from("chat_rooms")
     .insert({
+      id: roomId,
       is_group: false,
       created_by: user.id,
-    })
-    .select()
-    .single();
+    });
 
-  if (roomError || !newRoom) return { error: roomError?.message || "Failed to create room" };
+  if (roomError) {
+    logDebug(`Error creating new DM room: ${roomError.message}`);
+    return { error: roomError.message };
+  }
 
+  logDebug(`Inserting room members for room ${roomId}: ${user.id} (admin) and ${targetUserId} (member)...`);
   // Add both users as members
   const { error: memberError } = await supabase.from("room_members").insert([
-    { room_id: newRoom.id, user_id: user.id, role: "admin" },
-    { room_id: newRoom.id, user_id: targetUserId, role: "member" },
+    { room_id: roomId, user_id: user.id, role: "admin" },
+    { room_id: roomId, user_id: targetUserId, role: "member" },
   ]);
 
-  if (memberError) return { error: memberError.message };
+  if (memberError) {
+    logDebug(`Error inserting room members: ${memberError.message}`);
+    return { error: memberError.message };
+  }
 
-  return { roomId: newRoom.id };
+  logDebug(`Successfully created DM room: ${roomId}. Returning.`);
+  return { roomId };
 }
 
 export async function getRoomMessages(roomId: string, cursor?: string) {
@@ -204,15 +271,29 @@ export async function getRoomMessages(roomId: string, cursor?: string) {
 }
 
 export async function getRoomInfo(roomId: string) {
+  const fs = require("fs");
+  const logDebug = (msg: string) => {
+    try {
+      fs.appendFileSync("d:\\Desktop\\projects\\messenger\\chat-debug.log", `[${new Date().toISOString()}] ${msg}\n`);
+    } catch (e) {}
+  };
+
+  logDebug(`getRoomInfo called for roomId: ${roomId}`);
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) {
+    logDebug("getRoomInfo: No user found");
+    return null;
+  }
+
+  logDebug(`getRoomInfo: Logged in user is ${user.id}`);
 
   // Verify membership and get room with members
-  const { data: room } = await supabase
+  const { data: room, error: roomError } = await supabase
     .from("chat_rooms")
     .select(
       `
@@ -229,18 +310,32 @@ export async function getRoomInfo(roomId: string) {
     .eq("id", roomId)
     .single();
 
-  if (!room) return null;
+  if (roomError) {
+    logDebug(`getRoomInfo: chat_rooms query error: ${roomError.message}`);
+  }
+
+  if (!room) {
+    logDebug("getRoomInfo: Room not found in DB");
+    return null;
+  }
+
+  logDebug(`getRoomInfo: Room found! Members: ${JSON.stringify(room.room_members?.map((m: any) => m.user_id))}`);
 
   // Check user is a member
   const isMember = room.room_members?.some(
     (m: { user_id: string }) => m.user_id === user.id
   );
-  if (!isMember) return null;
+  if (!isMember) {
+    logDebug("getRoomInfo: User is not a member of this room");
+    return null;
+  }
 
   // Find other user for DM
   const otherMember = room.room_members?.find(
     (m: { user_id: string }) => m.user_id !== user.id
   );
+
+  logDebug(`getRoomInfo: otherMember user_id is ${otherMember?.user_id || "null"}`);
 
   return {
     ...room,
