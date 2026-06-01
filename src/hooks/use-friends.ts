@@ -21,7 +21,10 @@ export function useFriends(userId: string | undefined) {
 
   // Fetch all initial data
   const fetchData = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const [friendsList, pendingList, suggestionsList] = await Promise.all([
