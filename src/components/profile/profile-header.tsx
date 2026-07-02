@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
-import dynamic from "next/dynamic";
+import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import {
   MapPin,
@@ -18,12 +17,6 @@ import { FriendButton } from "@/components/friends/friend-button";
 import type { Profile } from "@/types/user";
 import type { FriendshipStatus } from "@/actions/friend-actions";
 import Link from "next/link";
-
-// Dynamically import Digital Core (SSR disabled — Three.js)
-const DigitalCore = dynamic(
-  () => import("@/components/profile/digital-core").then((mod) => mod.DigitalCore),
-  { ssr: false }
-);
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -62,7 +55,7 @@ export function ProfileHeader({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
     >
-      {/* Cover Image / Digital Core */}
+      {/* Cover Image */}
       <div className="relative h-40 overflow-hidden rounded-2xl sm:h-52">
         {profile.cover_url ? (
           <img
@@ -71,20 +64,13 @@ export function ProfileHeader({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="h-full w-full">
-            <DigitalCore
-              hue={(() => {
-                // Derive a unique hue from username
-                let hash = 0;
-                for (let i = 0; i < (profile.username || "").length; i++) {
-                  hash = profile.username.charCodeAt(i) + ((hash << 5) - hash);
-                }
-                return Math.abs(hash) % 360;
-              })()}
-              isOnline={profile.is_online}
-              height="100%"
-            />
-          </div>
+          <div
+            className="h-full w-full"
+            style={{
+              background:
+                "linear-gradient(135deg, hsl(263 70% 30%), hsl(290 65% 25%), hsl(240 30% 15%))",
+            }}
+          />
         )}
         {/* Gradient overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />

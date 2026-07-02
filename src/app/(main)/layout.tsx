@@ -1,7 +1,6 @@
 import { Sidebar } from "@/components/navigation/sidebar";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { ContentContainer } from "@/components/navigation/content-container";
-import { RadialNav } from "@/components/navigation/radial-nav";
 
 export default function MainLayout({
   children,
@@ -20,9 +19,6 @@ export default function MainLayout({
 
       {/* Mobile bottom nav */}
       <BottomNav />
-
-      {/* Radial Quick Menu FAB */}
-      <RadialNav />
     </div>
   );
 }
