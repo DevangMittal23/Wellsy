@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Welcome to WELLSY",
-  description: "Sign in or create an account to join the conversation.",
+  title: "Welcome to HUDdang",
+  description: "Sign in or create an account to join the conversation and trigger the huddang.",
 };
 
 export default function AuthLayout({
@@ -46,10 +46,10 @@ export default function AuthLayout({
         {/* Logo */}
         <div className="mb-8 text-center">
           <h1 className="gradient-text text-4xl font-bold tracking-tight">
-            WELLSY
+            HUDdang
           </h1>
           <p className="mt-2 text-sm text-text-secondary">
-            Where conversations feel alive
+            The chaotic social messenger where everything happens!
           </p>
         </div>
 

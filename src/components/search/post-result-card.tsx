@@ -2,17 +2,23 @@
 
 import Link from "next/link";
 import { Heart, MessageCircle } from "lucide-react";
-import { formatRelativeTime, getInitials } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/utils";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 interface PostResultCardProps {
   post: {
     id: string;
     content: string | null;
-    post_type: string;
+    created_at: string;
     likes_count: number;
     comments_count: number;
-    created_at: string;
-    profiles: {
+    profiles?: {
+      id: string;
+      username: string;
+      display_name: string;
+      avatar_url: string | null;
+    } | null;
+    author?: {
       id: string;
       username: string;
       display_name: string;
@@ -44,7 +50,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 }
 
 export function PostResultCard({ post, searchQuery }: PostResultCardProps) {
-  const author = post.profiles;
+  const author = post.author || post.profiles;
 
   return (
     <Link
@@ -54,18 +60,8 @@ export function PostResultCard({ post, searchQuery }: PostResultCardProps) {
       {/* Author */}
       {author && (
         <div className="mb-2 flex items-center gap-2">
-          {author.avatar_url ? (
-            <img
-              src={author.avatar_url}
-              alt={author.display_name}
-              className="h-7 w-7 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-muted text-[10px] font-semibold text-accent">
-              {getInitials(author.display_name)}
-            </div>
-          )}
-          <span className="text-xs font-medium text-text-secondary">
+          <UserAvatar src={author.avatar_url} name={author.display_name} size="xs" />
+          <span className="text-xs font-semibold text-text-primary group-hover:text-accent transition-colors">
             {author.display_name}
           </span>
           <span className="text-xs text-text-muted">

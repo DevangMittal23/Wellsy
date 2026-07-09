@@ -1,16 +1,37 @@
 "use client";
 
-import { useActionState } from "react";
-import { resetPassword, type AuthActionState } from "@/actions/auth-actions";
+import { useState, useTransition } from "react";
+import { resetPasswordForEmail } from "@/actions/auth";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Loader2, Mail } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ForgotPasswordPage() {
-  const [state, action, pending] = useActionState<AuthActionState, FormData>(
-    resetPassword,
-    null
-  );
+  const [isPending, startTransition] = useTransition();
+  const [email, setEmail] = useState("");
+  const [isSent, setIsSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setError(null);
+    startTransition(async () => {
+      try {
+        const res = await resetPasswordForEmail(email.trim());
+        if (res.error) {
+          setError(res.error);
+        } else {
+          setIsSent(true);
+          toast.success("Reset link sent!");
+        }
+      } catch (err: any) {
+        setError(err.message || "Something went wrong");
+      }
+    });
+  };
 
   return (
     <motion.div
@@ -20,26 +41,26 @@ export default function ForgotPasswordPage() {
     >
       <Link
         href="/login"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to login
       </Link>
 
-      {state?.success ? (
+      {isSent ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success-muted">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
             <Mail className="h-8 w-8 text-success" />
           </div>
           <h2 className="text-xl font-semibold text-text-primary">
             Check your email
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            {state.message}
+            We've sent a password reset link to {email}.
           </p>
           <Link
             href="/login"
@@ -56,18 +77,18 @@ export default function ForgotPasswordPage() {
               Reset your password
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
-              Enter your email and we&apos;ll send you a reset link
+              Enter your email and we'll send you a reset link
             </p>
           </div>
 
-          <form action={action} className="space-y-4">
-            {state?.error && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 className="rounded-lg bg-error-muted px-4 py-3 text-sm text-error"
               >
-                {state.error}
+                {error}
               </motion.div>
             )}
 
@@ -80,22 +101,22 @@ export default function ForgotPasswordPage() {
               </label>
               <input
                 id="reset-email"
-                name="email"
                 type="email"
-                autoComplete="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-primary placeholder:text-text-muted transition-colors duration-150 hover:border-border-focus/40 focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-border-focus/50"
+                className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none transition-colors"
               />
             </div>
 
             <button
               type="submit"
-              disabled={pending}
-              className="group relative w-full overflow-hidden rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isPending}
+              className="group relative w-full overflow-hidden rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                {pending ? (
+                {isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>

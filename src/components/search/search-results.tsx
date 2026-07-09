@@ -3,7 +3,7 @@
 import { useState, useCallback, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDebounce } from "@/hooks/use-debounce";
-import { searchUsers, searchPosts, searchHashtags } from "@/actions/search-actions";
+import { searchUsers, searchPosts, searchHashtags } from "@/actions/search";
 import { UserResultCard } from "./user-result-card";
 import { PostResultCard } from "./post-result-card";
 import { Search, Loader2, Hash, Users, FileText } from "lucide-react";
@@ -98,7 +98,7 @@ export function SearchResults({ trendingHashtags }: SearchResultsProps) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search WELLSY..."
+          placeholder="Search HUDdang..."
           autoFocus
           className="w-full rounded-xl border border-border bg-surface py-3 pl-12 pr-4 text-sm text-text-primary placeholder:text-text-muted transition-colors duration-150 hover:border-border-focus/40 focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-border-focus/50"
         />

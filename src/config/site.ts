@@ -1,7 +1,7 @@
 export const siteConfig = {
-  name: "WELLSY",
-  tagline: "Where conversations feel alive.",
+  name: "HUDdang",
+  tagline: "Where the chaos happens.",
   description:
-    "A modern social platform where conversations feel alive. Connect, share, and experience premium social interactions.",
+    "HUDdang (हड्डाँग) — A combined social messenger and feed platform. Message friends privately AND share posts publicly, all in one place.",
   url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 };

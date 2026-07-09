@@ -59,12 +59,12 @@ export default function NotificationsPage() {
     ];
 
     try {
-      const storedMute = localStorage.getItem("wellsy_notifications_mute_all");
+      const storedMute = localStorage.getItem("huddang_notifications_mute_all");
       if (storedMute) {
         setMuteAll(JSON.parse(storedMute));
       }
 
-      const stored = localStorage.getItem("wellsy_notification_settings");
+      const stored = localStorage.getItem("huddang_notification_settings");
       if (stored) {
         setSettings(JSON.parse(stored).map((item: any) => {
           // Re-associate icons since functions/components don't stringify
@@ -73,7 +73,7 @@ export default function NotificationsPage() {
         }));
       } else {
         setSettings(defaultSettings);
-        localStorage.setItem("wellsy_notification_settings", JSON.stringify(defaultSettings));
+        localStorage.setItem("huddang_notification_settings", JSON.stringify(defaultSettings));
       }
     } catch (e) {
       setSettings(defaultSettings);
@@ -93,7 +93,7 @@ export default function NotificationsPage() {
     setSettings(updated);
 
     try {
-      localStorage.setItem("wellsy_notification_settings", JSON.stringify(updated));
+      localStorage.setItem("huddang_notification_settings", JSON.stringify(updated));
       setTimeout(() => {
         setSavedStatus("All changes saved");
       }, 600);
@@ -108,7 +108,7 @@ export default function NotificationsPage() {
     setMuteAll(newMuteAll);
 
     try {
-      localStorage.setItem("wellsy_notifications_mute_all", JSON.stringify(newMuteAll));
+      localStorage.setItem("huddang_notifications_mute_all", JSON.stringify(newMuteAll));
       setTimeout(() => {
         setSavedStatus("All changes saved");
       }, 600);

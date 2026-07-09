@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTrendingHashtags } from "@/actions/search-actions";
+import { getTrendingHashtags } from "@/actions/search";
 import { SearchResults } from "@/components/search/search-results";
 
 export const metadata: Metadata = {

@@ -4,31 +4,19 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check, X, Loader2 } from "lucide-react";
-import { acceptFriendRequest, rejectFriendRequest } from "@/actions/friend-actions";
-import { getInitials, formatRelativeTime } from "@/lib/utils";
-
-interface FriendRequest {
-  id: string;
-  sender_id: string;
-  created_at: string;
-  sender?: {
-    id: string;
-    username: string;
-    display_name: string;
-    avatar_url: string | null;
-    bio: string | null;
-    is_online: boolean;
-  };
-}
+import { acceptFriendRequest, rejectFriendRequest } from "@/actions/friendships";
+import { formatRelativeTime } from "@/lib/utils";
+import { UserAvatar } from "@/components/shared/user-avatar";
+import type { Friendship } from "@/types";
 
 interface FriendRequestCardProps {
-  request: FriendRequest;
+  request: Friendship;
   onAction?: () => void;
 }
 
 export function FriendRequestCard({ request, onAction }: FriendRequestCardProps) {
   const [isPending, startTransition] = useTransition();
-  const sender = request.sender;
+  const sender = (request as any).sender || request.requester;
 
   if (!sender) return null;
 
@@ -55,20 +43,12 @@ export function FriendRequestCard({ request, onAction }: FriendRequestCardProps)
     >
       {/* Avatar */}
       <Link href={`/profile/${sender.username}`} className="relative shrink-0">
-        {sender.avatar_url ? (
-          <img
-            src={sender.avatar_url}
-            alt={sender.display_name}
-            className="h-12 w-12 rounded-full object-cover ring-2 ring-border"
-          />
-        ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-muted text-sm font-semibold text-accent ring-2 ring-border">
-            {getInitials(sender.display_name)}
-          </div>
-        )}
-        {sender.is_online && (
-          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-success" />
-        )}
+        <UserAvatar
+          src={sender.avatar_url}
+          name={sender.display_name}
+          isOnline={true}
+          size="sm"
+        />
       </Link>
 
       {/* Info */}
@@ -94,7 +74,7 @@ export function FriendRequestCard({ request, onAction }: FriendRequestCardProps)
         <button
           onClick={handleAccept}
           disabled={isPending}
-          className="flex h-9 items-center gap-1.5 rounded-xl bg-accent px-3 text-xs font-semibold text-white transition-all duration-200 hover:bg-accent-hover active:scale-95 disabled:opacity-50"
+          className="flex h-9 items-center gap-1.5 rounded-xl bg-accent px-3 text-xs font-semibold text-white transition-all duration-200 hover:bg-accent-hover active:scale-95 disabled:opacity-50 cursor-pointer"
         >
           {isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -106,7 +86,7 @@ export function FriendRequestCard({ request, onAction }: FriendRequestCardProps)
         <button
           onClick={handleReject}
           disabled={isPending}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-text-muted transition-all duration-200 hover:border-error/50 hover:text-error active:scale-95 disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-text-muted transition-all duration-200 hover:border-error/50 hover:text-error active:scale-95 disabled:opacity-50 cursor-pointer"
         >
           <X className="h-4 w-4" />
         </button>

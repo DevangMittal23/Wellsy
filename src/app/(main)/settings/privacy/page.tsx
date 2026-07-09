@@ -46,12 +46,12 @@ export default function PrivacyPage() {
     ];
 
     try {
-      const stored = localStorage.getItem("wellsy_privacy_settings");
+      const stored = localStorage.getItem("huddang_privacy_settings");
       if (stored) {
         setSettings(JSON.parse(stored));
       } else {
         setSettings(defaultSettings);
-        localStorage.setItem("wellsy_privacy_settings", JSON.stringify(defaultSettings));
+        localStorage.setItem("huddang_privacy_settings", JSON.stringify(defaultSettings));
       }
     } catch (e) {
       setSettings(defaultSettings);
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
     setSettings(updated);
 
     try {
-      localStorage.setItem("wellsy_privacy_settings", JSON.stringify(updated));
+      localStorage.setItem("huddang_privacy_settings", JSON.stringify(updated));
       setTimeout(() => {
         setSavedStatus("All changes saved");
       }, 600);

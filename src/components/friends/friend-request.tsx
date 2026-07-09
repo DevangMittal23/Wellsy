@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar } from "@/components/shared/avatar";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Bell } from "lucide-react";
 import Link from "next/link";
+import type { Friendship } from "@/types";
 
 interface FriendRequestProps {
-  requests: any[];
+  requests: Friendship[];
   onAccept: (requestId: string) => Promise<any>;
   onReject: (requestId: string) => Promise<any>;
 }
@@ -47,46 +48,49 @@ export function FriendRequest({ requests, onAccept, onReject }: FriendRequestPro
   return (
     <div className="space-y-3">
       <AnimatePresence mode="popLayout">
-        {requests.map((request, idx) => (
-          <motion.div
-            key={request.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3, delay: idx * 0.05 }}
-            layout
-            className="glass-card flex items-center justify-between p-4 transition-all duration-200 hover:border-accent/10"
-          >
-            <Link
-              href={`/profile/${request.sender?.username}`}
-              className="flex items-center gap-3 min-w-0 group"
+        {requests.map((request, idx) => {
+          const sender = (request as any).sender || request.requester;
+          return (
+            <motion.div
+              key={request.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, delay: idx * 0.05 }}
+              layout
+              className="glass-card flex items-center justify-between p-4 transition-all duration-200 hover:border-accent/10"
             >
-              <Avatar
-                src={request.sender?.avatar_url}
-                name={request.sender?.display_name || "User"}
-                isOnline={request.sender?.is_online}
-              />
-              <div className="min-w-0">
-                <p className="font-semibold text-sm text-text-primary truncate group-hover:text-accent transition-colors">
-                  {request.sender?.display_name || "User"}
-                </p>
-                <p className="text-xs text-text-muted truncate">
-                  @{request.sender?.username}
-                </p>
-                {request.sender?.bio && (
-                  <p className="text-[11px] text-text-muted truncate mt-0.5 max-w-[200px] sm:max-w-xs">
-                    {request.sender.bio}
+              <Link
+                href={`/profile/${sender?.username}`}
+                className="flex items-center gap-3 min-w-0 group"
+              >
+                <UserAvatar
+                  src={sender?.avatar_url}
+                  name={sender?.display_name || "User"}
+                  isOnline={true}
+                  size="sm"
+                />
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-text-primary truncate group-hover:text-accent transition-colors">
+                    {sender?.display_name || "User"}
                   </p>
-                )}
-              </div>
-            </Link>
+                  <p className="text-xs text-text-muted truncate">
+                    @{sender?.username}
+                  </p>
+                  {sender?.bio && (
+                    <p className="text-[11px] text-text-muted truncate mt-0.5 max-w-[200px] sm:max-w-xs">
+                      {sender.bio}
+                    </p>
+                  )}
+                </div>
+              </Link>
 
             {/* Accept / Reject actions */}
             <div className="flex items-center gap-2 shrink-0">
               <button
                 disabled={processingId === request.id}
                 onClick={() => handleAction(request.id, "accept")}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-success/10 text-success transition-all duration-200 hover:bg-success hover:text-white active:scale-95 disabled:opacity-50"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-success/10 text-success transition-all duration-200 hover:bg-success hover:text-white active:scale-95 disabled:opacity-50 cursor-pointer"
                 title="Accept Request"
               >
                 <Check className="h-4 w-4" />
@@ -95,14 +99,15 @@ export function FriendRequest({ requests, onAccept, onReject }: FriendRequestPro
               <button
                 disabled={processingId === request.id}
                 onClick={() => handleAction(request.id, "reject")}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-error-muted text-error transition-all duration-200 hover:bg-error hover:text-white active:scale-95 disabled:opacity-50"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-error/10 text-error transition-all duration-200 hover:bg-error hover:text-white active:scale-95 disabled:opacity-50 cursor-pointer"
                 title="Decline Request"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </AnimatePresence>
     </div>
   );

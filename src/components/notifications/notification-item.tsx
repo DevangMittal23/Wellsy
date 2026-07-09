@@ -2,12 +2,13 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { markNotificationRead } from "@/actions/notification-actions";
+import { markAsRead as markAsReadAction } from "@/actions/notifications";
 import { useNotificationStore } from "@/stores/notification-store";
-import { formatRelativeTime, getInitials } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/utils";
 import { Heart, MessageCircle, UserPlus, AtSign, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Notification } from "@/types/notification";
+import type { Notification } from "@/types";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 interface NotificationItemProps {
   notification: Notification;
@@ -22,29 +23,17 @@ const notificationConfig: Record<
     getText: (actorName: string) => string;
   }
 > = {
-  like: {
+  post_like: {
     icon: Heart,
     color: "text-rose-400",
     bgColor: "bg-rose-500/10",
     getText: (name) => `${name} liked your post`,
   },
-  comment: {
+  post_comment: {
     icon: MessageCircle,
     color: "text-sky-400",
     bgColor: "bg-sky-500/10",
     getText: (name) => `${name} commented on your post`,
-  },
-  follow: {
-    icon: UserPlus,
-    color: "text-violet-400",
-    bgColor: "bg-violet-500/10",
-    getText: (name) => `${name} started following you`,
-  },
-  mention: {
-    icon: AtSign,
-    color: "text-amber-400",
-    bgColor: "bg-amber-500/10",
-    getText: (name) => `${name} mentioned you`,
   },
   friend_request: {
     icon: UserPlus,
@@ -64,22 +53,19 @@ const notificationConfig: Record<
     bgColor: "bg-accent-subtle",
     getText: (name) => `${name} sent you a message`,
   },
-  share: {
-    icon: Share2,
-    color: "text-teal-400",
-    bgColor: "bg-teal-500/10",
-    getText: (name) => `${name} shared your post`,
+  mention: {
+    icon: AtSign,
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/10",
+    getText: (name) => `${name} mentioned you`,
   },
 };
 
 function getNotificationLink(notification: Notification): string {
-  if (notification.type === "follow" && notification.actor?.username) {
-    return `/profile/${notification.actor.username}`;
+  if (notification.type === "friend_request" || notification.type === "friend_accept") {
+    return "/friends";
   }
-  if (
-    (notification.type === "like" || notification.type === "comment") &&
-    notification.entity_id
-  ) {
+  if (notification.type === "post_like" || notification.type === "post_comment") {
     return "/feed";
   }
   if (notification.type === "message") {
@@ -89,20 +75,19 @@ function getNotificationLink(notification: Notification): string {
 }
 
 export function NotificationItem({ notification }: NotificationItemProps) {
-  const { markRead } = useNotificationStore();
+  const { markAsRead } = useNotificationStore();
   const [, startTransition] = useTransition();
 
-  const config = notificationConfig[notification.type] || notificationConfig.like;
-  const actorName =
-    notification.actor?.display_name || notification.content || "Someone";
+  const config = notificationConfig[notification.type] || notificationConfig.post_like;
+  const actorName = notification.actor?.display_name || "Someone";
   const Icon = config.icon;
   const link = getNotificationLink(notification);
 
   const handleClick = () => {
     if (!notification.is_read) {
       startTransition(async () => {
-        await markNotificationRead(notification.id);
-        markRead(notification.id);
+        await markAsReadAction(notification.id);
+        markAsRead(notification.id);
       });
     }
   };
@@ -129,20 +114,13 @@ export function NotificationItem({ notification }: NotificationItemProps) {
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
-          {/* Actor avatar */}
           {notification.actor && (
             <div className="shrink-0">
-              {notification.actor.avatar_url ? (
-                <img
-                  src={notification.actor.avatar_url}
-                  alt={notification.actor.display_name}
-                  className="h-8 w-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-muted text-xs font-semibold text-accent">
-                  {getInitials(notification.actor.display_name)}
-                </div>
-              )}
+              <UserAvatar
+                src={notification.actor.avatar_url}
+                name={notification.actor.display_name}
+                size="xs"
+              />
             </div>
           )}
 
@@ -157,9 +135,9 @@ export function NotificationItem({ notification }: NotificationItemProps) {
             >
               {config.getText(actorName)}
             </p>
-            {notification.content && notification.type !== "follow" && (
+            {notification.body && (
               <p className="mt-0.5 truncate text-xs text-text-muted">
-                {notification.content}
+                {notification.body}
               </p>
             )}
             <p className="mt-1 text-xs text-text-muted">
@@ -169,7 +147,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         </div>
       </div>
 
-      {/* Unread dot */}
+      {/* Unread indicator */}
       {!notification.is_read && (
         <div className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-accent animate-pulse" />
       )}

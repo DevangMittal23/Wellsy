@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar } from "@/components/shared/avatar";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, UserMinus, Search, Users } from "lucide-react";
-import { getOrCreateDMRoom } from "@/actions/chat-actions";
+import { createDM as getOrCreateDM } from "@/actions/conversations";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import type { User } from "@/types";
+import { toast } from "sonner";
 
 interface FriendListProps {
-  friends: any[];
+  friends: User[];
   onRemoveFriend: (friendId: string) => Promise<any>;
 }
 
@@ -27,12 +29,16 @@ export function FriendList({ friends, onRemoveFriend }: FriendListProps) {
   const handleStartChat = async (friendId: string) => {
     setActioningId(friendId);
     try {
-      const res = await getOrCreateDMRoom(friendId);
-      if (res && "roomId" in res && res.roomId) {
-        router.push(`/chat/${res.roomId}`);
+      const res = await getOrCreateDM(friendId);
+      if (res && res.conversation) {
+        toast.success("Opening chat room...");
+        router.push(`/chat/${res.conversation.id}`);
+      } else if (res && res.error) {
+        toast.error(res.error);
       }
-    } catch (err) {
-      console.error("Error opening room:", err);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to open chat room");
+      console.error("Error opening DM room:", err);
     } finally {
       setActioningId(null);
     }
@@ -46,7 +52,7 @@ export function FriendList({ friends, onRemoveFriend }: FriendListProps) {
         </div>
         <h3 className="text-lg font-semibold text-text-primary">No friends yet</h3>
         <p className="mt-2 text-sm text-text-secondary max-w-sm">
-          Discover interesting people on WELLSY and send them friend requests to stay connected!
+          Discover interesting people on HUDdang and send them friend requests to stay connected!
         </p>
       </div>
     );
@@ -62,7 +68,7 @@ export function FriendList({ friends, onRemoveFriend }: FriendListProps) {
           placeholder="Search friends..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border border-border bg-surface-secondary py-3 pl-11 pr-4 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className="w-full rounded-xl border border-border bg-surface-secondary py-3 pl-11 pr-4 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
         />
       </div>
 
@@ -83,10 +89,11 @@ export function FriendList({ friends, onRemoveFriend }: FriendListProps) {
                 href={`/profile/${friend.username}`}
                 className="flex items-center gap-3 min-w-0 group"
               >
-                <Avatar
+                <UserAvatar
                   src={friend.avatar_url}
                   name={friend.display_name}
-                  isOnline={friend.is_online}
+                  isOnline={true}
+                  size="sm"
                 />
                 <div className="min-w-0">
                   <p className="font-semibold text-sm text-text-primary truncate group-hover:text-accent transition-colors">
@@ -103,7 +110,7 @@ export function FriendList({ friends, onRemoveFriend }: FriendListProps) {
                 <button
                   onClick={() => handleStartChat(friend.id)}
                   disabled={actioningId === friend.id}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent transition-all duration-200 hover:bg-accent hover:text-white active:scale-95 disabled:opacity-50"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent transition-all duration-200 hover:bg-accent hover:text-white active:scale-95 disabled:opacity-50 cursor-pointer"
                   title="Send Message"
                 >
                   <MessageSquare className="h-4 w-4" />
@@ -111,7 +118,7 @@ export function FriendList({ friends, onRemoveFriend }: FriendListProps) {
                 
                 <button
                   onClick={() => onRemoveFriend(friend.id)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-error-muted text-error transition-all duration-200 hover:bg-error hover:text-white active:scale-95"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-error/10 text-error transition-all duration-200 hover:bg-error hover:text-white active:scale-95 cursor-pointer"
                   title="Remove Friend"
                 >
                   <UserMinus className="h-4 w-4" />

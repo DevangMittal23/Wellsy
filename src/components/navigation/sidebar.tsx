@@ -15,55 +15,48 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useNotificationStore } from "@/stores/notification-store";
-import { useChatStore } from "@/stores/chat-store";
-import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications";
-import { useChatRooms } from "@/hooks/use-chat-rooms";
-import { signOut } from "@/actions/auth-actions";
-import { getUnreadNotificationCount } from "@/actions/notification-actions";
-import { getTotalUnreadMessages } from "@/actions/chat-actions";
-import { getPendingFriendRequests } from "@/actions/friend-actions";
+import { useNotifications } from "@/hooks/use-notifications";
+import { useConversations } from "@/hooks/use-conversations";
+import { signOut } from "@/actions/auth";
+import { getPendingRequests } from "@/actions/friendships";
 import { cn, getInitials } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 const navItems = [
-  { href: "/feed", icon: Home, label: "Feed", badgeKey: null },
+  { href: "/feed", icon: Home, label: "Home", badgeKey: "feed" as const },
   { href: "/search", icon: Search, label: "Search", badgeKey: null },
-  { href: "/discover", icon: Sparkles, label: "Discover", badgeKey: null },
-  { href: "/friends", icon: Users, label: "Friends", badgeKey: "friends" as const },
-  { href: "/chat", icon: MessageCircle, label: "Chat", badgeKey: "chat" as const },
-  { href: "/notifications", icon: Bell, label: "Notifications", badgeKey: "notifications" as const },
+  { href: "/discover", icon: Sparkles, label: "Explore", badgeKey: null },
+  { href: "/friends", icon: Users, label: "Circle", badgeKey: "friends" as const },
+  { href: "/chat", icon: MessageCircle, label: "Messages", badgeKey: "chat" as const },
+  { href: "/notifications", icon: Bell, label: "Activity", badgeKey: "notifications" as const },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { unreadCount: notifUnread, setUnreadCount: setNotifUnread } = useNotificationStore();
-  const { totalUnread: chatUnread, setTotalUnread: setChatUnread } = useChatStore();
+  
+  // Real-time unread counts automatically synced via hooks
+  const { unreadCount: notifUnread } = useNotifications();
+  const { totalUnread: chatUnread } = useConversations();
   const [friendsUnread, setFriendsUnread] = useState(0);
 
-  // Subscribe to realtime updates
-  useRealtimeNotifications(user?.id);
-  useChatRooms(user?.id);
-
-  // Fetch initial unread counts
+  // Fetch pending friend requests
   useEffect(() => {
-    async function fetchCounts() {
-      const [notifCount, chatCount, pendingRequests] = await Promise.all([
-        getUnreadNotificationCount(),
-        getTotalUnreadMessages(),
-        getPendingFriendRequests(),
-      ]);
-      setNotifUnread(notifCount);
-      setChatUnread(chatCount);
-      setFriendsUnread(pendingRequests?.length || 0);
+    async function fetchFriendsCount() {
+      try {
+        const pending = await getPendingRequests();
+        setFriendsUnread(pending?.length || 0);
+      } catch (err) {
+        console.error(err);
+      }
     }
     if (user?.id) {
-      fetchCounts();
+      fetchFriendsCount();
     }
-  }, [user?.id, setNotifUnread, setChatUnread]);
+  }, [user?.id]);
 
-  const getBadgeCount = (key: "chat" | "notifications" | "friends" | null) => {
+  const getBadgeCount = (key: "chat" | "notifications" | "friends" | "feed" | null) => {
     if (key === "notifications") return notifUnread;
     if (key === "chat") return chatUnread;
     if (key === "friends") return friendsUnread;
@@ -71,15 +64,15 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-dvh w-[260px] flex-col border-r border-border bg-background-secondary lg:flex">
+    <aside className="fixed left-0 top-0 z-40 hidden h-dvh w-[240px] flex-col border-r border-white/[0.06] bg-background-secondary lg:flex">
       {/* Logo */}
-      <div className="flex h-16 items-center px-6">
+      <div className="flex h-16 items-center px-6 border-b border-white/[0.06] mb-4">
         <Link href="/feed" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-            <span className="text-sm font-bold text-white">W</span>
+            <span className="text-sm font-bold text-white">H</span>
           </div>
           <span className="gradient-text text-xl font-bold tracking-tight">
-            WELLSY
+            HUDdang
           </span>
         </Link>
       </div>
@@ -94,24 +87,12 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                "group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all",
                 isActive
-                  ? "text-text-primary"
-                  : "text-text-secondary hover:text-text-primary hover:bg-surface"
+                  ? "text-white border-l-[3px] border-purple-500 pl-[13px] bg-white/[0.05]"
+                  : "text-text-secondary hover:text-white hover:bg-white/[0.03] border-l-[3px] border-transparent"
               )}
             >
-              {isActive && (
-                <motion.div
-                  layoutId="sidebar-active"
-                  className="absolute inset-0 rounded-xl bg-surface"
-                  style={{ zIndex: -1 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 30,
-                  }}
-                />
-              )}
               <div className="relative">
                 <item.icon
                   className={cn(
@@ -129,40 +110,21 @@ export function Sidebar() {
             </Link>
           );
         })}
-
-        {/* Create Post */}
-        <Link
-          href="/feed?create=true"
-          className="mt-4 flex items-center gap-3 rounded-xl bg-accent/10 px-3 py-2.5 text-sm font-medium text-accent transition-all duration-200 hover:bg-accent/20"
-        >
-          <PlusSquare className="h-5 w-5 shrink-0" />
-          Create Post
-        </Link>
       </nav>
 
       {/* User section */}
-      <div className="border-t border-border p-3">
+      <div className="border-t border-white/[0.06] pt-4 p-3">
         <div className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-surface">
           <Link
             href={user ? `/profile/${user.username}` : "/feed"}
             className="flex flex-1 items-center gap-3"
           >
-            <div className="relative">
-              {user?.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.display_name}
-                  className="h-9 w-9 rounded-full object-cover ring-2 ring-border"
-                />
-              ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-muted text-xs font-semibold text-accent ring-2 ring-border">
-                  {user ? getInitials(user.display_name) : "?"}
-                </div>
-              )}
-              {user?.is_online && (
-                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background-secondary bg-success" />
-              )}
-            </div>
+            <UserAvatar
+              src={user?.avatar_url}
+              name={user?.display_name || "User"}
+              size="sm"
+              isOnline={true}
+            />
             <div className="flex-1 overflow-hidden">
               <p className="truncate text-sm font-medium text-text-primary">
                 {user?.display_name || "Loading..."}
@@ -184,7 +146,7 @@ export function Sidebar() {
             <form action={signOut}>
               <button
                 type="submit"
-                className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-error"
+                className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-error cursor-pointer"
                 aria-label="Sign out"
               >
                 <LogOut className="h-4 w-4" />

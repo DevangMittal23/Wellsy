@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Post } from "@/types/post";
+import type { Post } from "@/types";
 
 interface FeedState {
   posts: Post[];
@@ -52,7 +52,7 @@ export const useFeedStore = create<FeedState>((set) => ({
         p.id === postId
           ? {
               ...p,
-              has_liked: liked,
+              is_liked: liked,
               likes_count: liked ? p.likes_count + 1 : p.likes_count - 1,
             }
           : p
@@ -64,8 +64,7 @@ export const useFeedStore = create<FeedState>((set) => ({
         p.id === postId
           ? {
               ...p,
-              has_saved: saved,
-              saves_count: saved ? p.saves_count + 1 : p.saves_count - 1,
+              is_bookmarked: saved,
             }
           : p
       ),

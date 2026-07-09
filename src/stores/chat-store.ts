@@ -1,60 +1,49 @@
 import { create } from "zustand";
-import type { Message } from "@/types/chat";
-
-interface ChatRoom {
-  id: string;
-  name: string | null;
-  is_group: boolean;
-  last_message_at: string;
-  other_user?: {
-    id: string;
-    username: string;
-    display_name: string;
-    avatar_url: string | null;
-    is_online: boolean;
-  } | null;
-  last_message?: {
-    id: string;
-    content: string | null;
-    message_type: string;
-    created_at: string;
-    sender_id: string;
-  } | null;
-  unread_count?: number;
-}
+import type { Conversation, Message } from "@/types";
 
 interface ChatState {
-  rooms: ChatRoom[];
-  activeRoomId: string | null;
+  conversations: Conversation[];
+  activeConversationId: string | null;
   messages: Message[];
   isLoading: boolean;
   hasMore: boolean;
   totalUnread: number;
-  setRooms: (rooms: ChatRoom[]) => void;
-  setActiveRoom: (roomId: string | null) => void;
+  drafts: Record<string, string>; // conversationId -> draft text
+  setConversations: (conversations: Conversation[]) => void;
+  setActiveConversation: (id: string | null) => void;
   setMessages: (messages: Message[]) => void;
   prependMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
+  updateMessage: (messageId: string, updates: Partial<Message>) => void;
+  removeMessage: (messageId: string) => void;
   setLoading: (loading: boolean) => void;
   setHasMore: (hasMore: boolean) => void;
   setTotalUnread: (count: number) => void;
-  updateRoomPreview: (roomId: string, message: Message) => void;
-  markRoomRead: (roomId: string) => void;
+  setDraft: (conversationId: string, text: string) => void;
+  updateConversationPreview: (conversationId: string, message: Message) => void;
+  markConversationRead: (conversationId: string) => void;
   reset: () => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
-  rooms: [],
-  activeRoomId: null,
+  conversations: [],
+  activeConversationId: null,
   messages: [],
   isLoading: false,
   hasMore: true,
   totalUnread: 0,
-  setRooms: (rooms) => {
-    const totalUnread = rooms.reduce((acc, r) => acc + (r.unread_count || 0), 0);
-    set({ rooms, totalUnread });
+  drafts: {},
+
+  setConversations: (conversations) => {
+    const totalUnread = conversations.reduce(
+      (acc, c) => acc + (c.unread_count || 0),
+      0
+    );
+    set({ conversations, totalUnread });
   },
-  setActiveRoom: (roomId) => set({ activeRoomId: roomId }),
+
+  setActiveConversation: (id) => set({ activeConversationId: id }),
+
   setMessages: (messages) =>
     set(() => {
       const seen = new Set<string>();
@@ -65,6 +54,7 @@ export const useChatStore = create<ChatState>((set) => ({
       });
       return { messages: unique };
     }),
+
   prependMessages: (older) =>
     set((state) => {
       const combined = [...older, ...state.messages];
@@ -76,54 +66,82 @@ export const useChatStore = create<ChatState>((set) => ({
       });
       return { messages: unique };
     }),
+
   addMessage: (message) =>
     set((state) => {
-      // Deduplicate
       if (state.messages.some((m) => m.id === message.id)) return state;
       return { messages: [...state.messages, message] };
     }),
+
+  updateMessage: (messageId, updates) =>
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m.id === messageId ? { ...m, ...updates } : m
+      ),
+    })),
+
+  removeMessage: (messageId) =>
+    set((state) => ({
+      messages: state.messages.filter((m) => m.id !== messageId),
+    })),
+
   setLoading: (isLoading) => set({ isLoading }),
   setHasMore: (hasMore) => set({ hasMore }),
   setTotalUnread: (totalUnread) => set({ totalUnread }),
-  updateRoomPreview: (roomId, message) =>
+
+  setDraft: (conversationId, text) =>
+    set((state) => ({
+      drafts: { ...state.drafts, [conversationId]: text },
+    })),
+
+  updateConversationPreview: (conversationId, message) =>
     set((state) => {
-      const updatedRooms = state.rooms.map((r) =>
-        r.id === roomId
+      const updated = state.conversations.map((c) =>
+        c.id === conversationId
           ? {
-              ...r,
-              last_message: {
-                id: message.id,
-                content: message.content,
-                message_type: message.message_type,
-                created_at: message.created_at,
-                sender_id: message.sender_id,
-              },
+              ...c,
+              last_message: message,
               last_message_at: message.created_at,
               unread_count:
-                state.activeRoomId === roomId
+                state.activeConversationId === conversationId
                   ? 0
-                  : (r.unread_count || 0) + 1,
+                  : (c.unread_count || 0) + 1,
             }
-          : r
+          : c
       );
-      const totalUnread = updatedRooms.reduce((acc, r) => acc + (r.unread_count || 0), 0);
-      return { rooms: updatedRooms, totalUnread };
+      // Sort by last_message_at descending
+      updated.sort(
+        (a, b) =>
+          new Date(b.last_message_at).getTime() -
+          new Date(a.last_message_at).getTime()
+      );
+      const totalUnread = updated.reduce(
+        (acc, c) => acc + (c.unread_count || 0),
+        0
+      );
+      return { conversations: updated, totalUnread };
     }),
-  markRoomRead: (roomId) =>
+
+  markConversationRead: (conversationId) =>
     set((state) => {
-      const updatedRooms = state.rooms.map((r) =>
-        r.id === roomId ? { ...r, unread_count: 0 } : r
+      const updated = state.conversations.map((c) =>
+        c.id === conversationId ? { ...c, unread_count: 0 } : c
       );
-      const totalUnread = updatedRooms.reduce((acc, r) => acc + (r.unread_count || 0), 0);
-      return { rooms: updatedRooms, totalUnread };
+      const totalUnread = updated.reduce(
+        (acc, c) => acc + (c.unread_count || 0),
+        0
+      );
+      return { conversations: updated, totalUnread };
     }),
+
   reset: () =>
     set({
-      rooms: [],
-      activeRoomId: null,
+      conversations: [],
+      activeConversationId: null,
       messages: [],
       isLoading: false,
       hasMore: true,
       totalUnread: 0,
+      drafts: {},
     }),
 }));

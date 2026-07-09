@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getRoomInfo, getRoomMessages, getUserRooms } from "@/actions/chat-actions";
-import { ChatMessageArea } from "@/components/chat/chat-message-area";
+import { getConversation, getConversations } from "@/actions/conversations";
+import { getFriends } from "@/actions/friendships";
+import { getMessages } from "@/actions/messages";
+import { ChatRoom } from "@/components/chat/chat-room";
 import { ChatLayout } from "@/components/chat/chat-layout";
-import type { Message } from "@/types/chat";
 
 interface ChatRoomPageProps {
   params: Promise<{ roomId: string }>;
@@ -13,39 +14,36 @@ export async function generateMetadata({
   params,
 }: ChatRoomPageProps): Promise<Metadata> {
   const { roomId } = await params;
-  const roomInfo = await getRoomInfo(roomId);
+  const conversation = await getConversation(roomId);
 
-  if (!roomInfo) {
+  if (!conversation) {
     return { title: "Chat not found" };
   }
 
-  const otherUserName = roomInfo.other_user?.display_name || "Chat";
-
   return {
-    title: `Chat with ${otherUserName}`,
-    description: `Private conversation with ${otherUserName} on WELLSY.`,
+    title: conversation.name ? `${conversation.name} - Chat` : "Chat",
+    description: `Conversation on HUDdang.`,
   };
 }
 
 export default async function ChatRoomPage({ params }: ChatRoomPageProps) {
   const { roomId } = await params;
-  const roomInfo = await getRoomInfo(roomId);
+  const conversation = await getConversation(roomId);
 
-  if (!roomInfo) {
+  if (!conversation) {
     notFound();
   }
 
-  const [{ messages }, rooms] = await Promise.all([
-    getRoomMessages(roomId),
-    getUserRooms(),
+  const [conversations, friends] = await Promise.all([
+    getConversations(),
+    getFriends(),
   ]);
 
   return (
-    <ChatLayout rooms={rooms} activeRoomId={roomId}>
-      <ChatMessageArea
-        roomId={roomId}
-        initialMessages={messages as Message[]}
-        roomInfo={roomInfo}
+    <ChatLayout rooms={conversations} friends={friends} activeRoomId={roomId}>
+      <ChatRoom
+        conversationId={roomId}
+        initialConversation={conversation}
       />
     </ChatLayout>
   );

@@ -1,29 +1,49 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { formatDistanceToNowStrict } from "date-fns";
+import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
 
+/** Merge Tailwind classes with conflict resolution */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatRelativeTime(date: string | Date): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return formatDistanceToNowStrict(d, { addSuffix: true });
+/** Format a date string into a human-readable relative time */
+export function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  return formatDistanceToNow(date, { addSuffix: true });
 }
 
-export function generateUsername(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "")
-    .slice(0, 20)
-    .concat(Math.random().toString(36).slice(2, 6));
+/** Format a date for message timestamps */
+export function formatMessageTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isToday(date)) {
+    return format(date, "h:mm a");
+  }
+  if (isYesterday(date)) {
+    return "Yesterday " + format(date, "h:mm a");
+  }
+  return format(date, "MMM d, h:mm a");
 }
 
-export function truncate(str: string, length: number): string {
-  if (str.length <= length) return str;
-  return str.slice(0, length).trimEnd() + "…";
+/** Format a date for conversation list previews */
+export function formatConversationTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isToday(date)) {
+    return format(date, "h:mm a");
+  }
+  if (isYesterday(date)) {
+    return "Yesterday";
+  }
+  return format(date, "MMM d");
 }
 
+/** Truncate a string to a max length with ellipsis */
+export function truncate(str: string, maxLength: number): string {
+  if (str.length <= maxLength) return str;
+  return str.slice(0, maxLength - 1) + "…";
+}
+
+/** Generate initials from a display name */
 export function getInitials(name: string): string {
   return name
     .split(" ")
@@ -33,12 +53,8 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function extractHashtags(text: string): string[] {
-  const matches = text.match(/#[\w]+/g);
-  return matches ? [...new Set(matches.map((tag) => tag.slice(1).toLowerCase()))] : [];
-}
-
-export function extractMentions(text: string): string[] {
-  const matches = text.match(/@[\w]+/g);
-  return matches ? [...new Set(matches.map((m) => m.slice(1).toLowerCase()))] : [];
+/** Get Supabase storage public URL */
+export function getStorageUrl(bucket: string, path: string): string {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
 }

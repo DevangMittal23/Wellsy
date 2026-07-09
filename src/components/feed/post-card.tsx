@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useCallback, useTransition, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,28 +15,29 @@ import {
   MessageSquare,
   X,
 } from "lucide-react";
-import { formatRelativeTime, cn, getInitials } from "@/lib/utils";
+import { formatRelativeTime, cn } from "@/lib/utils";
 import {
   likePost,
   unlikePost,
-  savePost,
-  unsavePost,
+  bookmarkPost,
+  unbookmarkPost,
   deletePost,
-  createComment,
-  getPostComments,
-} from "@/actions/post-actions";
-import { useFeedStore } from "@/stores/feed-store";
+} from "@/actions/posts";
+import { createComment, getPostComments } from "@/actions/comments";
 import { useAuth } from "@/hooks/use-auth";
-import type { Post } from "@/types/post";
+import type { Post, Comment } from "@/types";
 import Link from "next/link";
+import { UserAvatar } from "@/components/shared/user-avatar";
+import { toast } from "sonner";
 
 interface PostCardProps {
   post: Post;
+  onDelete?: () => void;
+  onUpdate?: (updates: Partial<Post>) => void;
 }
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
   const { user } = useAuth();
-  const { toggleLike, toggleSave, removePost } = useFeedStore();
   const [showMenu, setShowMenu] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -42,21 +45,33 @@ export function PostCard({ post }: PostCardProps) {
 
   // Comments state
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [commentsCount, setCommentsCount] = useState(post.comments_count);
   const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
-  const isOwner = user?.id === post.user_id;
-  const profile = post.profiles;
-  const rootComments = comments.filter((c) => c.parent_id === null);
+  const isOwner = user?.id === post.author_id;
+  const author = post.author;
+  const rootComments = comments.filter((c) => c.parent_comment_id === null);
 
   const handleLike = useCallback(() => {
-    const newLiked = !post.has_liked;
-    toggleLike(post.id, newLiked);
+    if (!user) {
+      toast.error("Please sign in to like posts");
+      return;
+    }
+    const newLiked = !post.is_liked;
+    const currentLikesCount = post.likes_count;
+    
+    // Optimistic update
+    if (onUpdate) {
+      onUpdate({
+        is_liked: newLiked,
+        likes_count: newLiked ? currentLikesCount + 1 : Math.max(0, currentLikesCount - 1),
+      });
+    }
+
     setIsLikeAnimating(true);
     setTimeout(() => setIsLikeAnimating(false), 400);
 
@@ -67,59 +82,71 @@ export function PostCard({ post }: PostCardProps) {
         await unlikePost(post.id);
       }
     });
-  }, [post.id, post.has_liked, toggleLike]);
+  }, [post.id, post.is_liked, post.likes_count, onUpdate, user]);
 
   const handleSave = useCallback(() => {
-    const newSaved = !post.has_saved;
-    toggleSave(post.id, newSaved);
+    if (!user) {
+      toast.error("Please sign in to bookmark posts");
+      return;
+    }
+    const newSaved = !post.is_bookmarked;
+    
+    // Optimistic update
+    if (onUpdate) {
+      onUpdate({ is_bookmarked: newSaved });
+    }
 
     startTransition(async () => {
       if (newSaved) {
-        await savePost(post.id);
+        await bookmarkPost(post.id);
+        toast.success("Post bookmarked!");
       } else {
-        await unsavePost(post.id);
+        await unbookmarkPost(post.id);
+        toast.success("Bookmark removed");
       }
     });
-  }, [post.id, post.has_saved, toggleSave]);
+  }, [post.id, post.is_bookmarked, onUpdate, user]);
 
   const handleDelete = useCallback(() => {
-    removePost(post.id);
-    setShowMenu(false);
     startTransition(async () => {
-      await deletePost(post.id);
+      const res = await deletePost(post.id);
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        toast.success("Post deleted successfully");
+        if (onDelete) onDelete();
+      }
     });
-  }, [post.id, removePost]);
+    setShowMenu(false);
+  }, [post.id, onDelete]);
 
   const handleShare = useCallback(async () => {
     const shareUrl = `${window.location.origin}/post/${post.id}`;
     const shareData = {
-      title: `WELLSY Post by @${profile?.username || "user"}`,
-      text: post.content || "Check out this post on WELLSY!",
+      title: `HUDdang Post by @${author?.username || "user"}`,
+      text: post.content || "Check out this post on HUDdang!",
       url: shareUrl,
     };
 
-    // Use Web Share API if supported by the browser/OS
     if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
       try {
         await navigator.share(shareData);
         return;
       } catch (err) {
-        if ((err as Error).name === "AbortError") {
-          return; // user cancelled native share modal
-        }
-        console.error("Web Share failed, falling back to clipboard:", err);
+        if ((err as Error).name === "AbortError") return;
+        console.error("Web Share failed:", err);
       }
     }
 
-    // Fallback: Copy to clipboard
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
+      toast.success("Link copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Clipboard copy failed", err);
     }
-  }, [post.id, post.content, profile?.username]);
+  }, [post.id, post.content, author?.username]);
 
   const toggleComments = useCallback(async () => {
     const nextShow = !showComments;
@@ -147,19 +174,28 @@ export function PostCard({ post }: PostCardProps) {
     if (!commentText.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append("content", commentText.trim());
-    if (replyingTo) {
-      formData.append("parent_id", replyingTo.id);
-    }
-
     try {
-      const res = await createComment(post.id, formData);
+      const parentId = replyingTo ? replyingTo.id : null;
+      const res = await createComment(post.id, commentText.trim(), parentId);
       if (res && res.comment) {
-        setComments((prev) => [...prev, res.comment]);
+        if (parentId) {
+          // Append as reply to the correct parent comment
+          setComments((prev) =>
+            prev.map((c) =>
+              c.id === parentId
+                ? { ...c, replies: [...(c.replies || []), res.comment as Comment] }
+                : c
+            )
+          );
+        } else {
+          setComments((prev) => [...prev, res.comment as Comment]);
+        }
         setCommentText("");
-        setCommentsCount((prev) => prev + 1);
         setReplyingTo(null);
+        if (onUpdate) {
+          onUpdate({ comments_count: post.comments_count + 1 });
+        }
+        toast.success("Comment posted!");
       }
     } catch (err) {
       console.error("Failed to post comment:", err);
@@ -168,20 +204,11 @@ export function PostCard({ post }: PostCardProps) {
     }
   };
 
-  // Find the ultimate root parent for any comment
-  const getRootId = useCallback((commentId: string, list: any[]): string | null => {
-    const comment = list.find((c) => c.id === commentId);
-    if (!comment) return null;
-    if (comment.parent_id === null) return comment.id;
-    return getRootId(comment.parent_id, list);
-  }, []);
-
-  // Double-tap like
   const handleDoubleTap = useCallback(() => {
-    if (!post.has_liked) {
+    if (!post.is_liked) {
       handleLike();
     }
-  }, [post.has_liked, handleLike]);
+  }, [post.is_liked, handleLike]);
 
   return (
     <motion.article
@@ -189,37 +216,26 @@ export function PostCard({ post }: PostCardProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
       className="glass-card overflow-hidden transition-shadow duration-300 hover:shadow-xl"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5">
         <Link
-          href={`/profile/${profile?.username}`}
+          href={`/profile/${author?.username}`}
           className="flex items-center gap-3 group"
         >
-          <div className="relative">
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.display_name}
-                className="h-10 w-10 rounded-full object-cover ring-2 ring-border transition-all duration-200 group-hover:ring-accent/50"
-              />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-muted text-sm font-semibold text-accent ring-2 ring-border transition-all duration-200 group-hover:ring-accent/50">
-                {profile ? getInitials(profile.display_name) : "?"}
-              </div>
-            )}
-            {profile?.is_online && (
-              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface bg-success" />
-            )}
-          </div>
+          <UserAvatar
+            src={author?.avatar_url}
+            name={author?.display_name || "User"}
+            size="sm"
+            isOnline={true}
+          />
           <div>
             <p className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors">
-              {profile?.display_name}
+              {author?.display_name || "HUDdang User"}
             </p>
             <p className="text-xs text-text-muted">
-              @{profile?.username} · {formatRelativeTime(post.created_at)}
+              @{author?.username || "user"} · {formatRelativeTime(post.created_at)}
             </p>
           </div>
         </Link>
@@ -228,7 +244,7 @@ export function PostCard({ post }: PostCardProps) {
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-secondary"
+              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-secondary cursor-pointer"
               aria-label="Post options"
             >
               <MoreHorizontal className="h-5 w-5" />
@@ -243,7 +259,7 @@ export function PostCard({ post }: PostCardProps) {
                 >
                   <button
                     onClick={handleDelete}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-error hover:bg-error-muted transition-colors"
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-error hover:bg-error-muted transition-colors cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" />
                     Delete post
@@ -257,10 +273,7 @@ export function PostCard({ post }: PostCardProps) {
 
       {/* Content */}
       {post.content && (
-        <div
-          className="px-5 pt-3"
-          onDoubleClick={handleDoubleTap}
-        >
+        <div className="px-5 pt-3" onDoubleClick={handleDoubleTap}>
           <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-text-primary">
             {post.content.split(/(#\w+|@\w+)/g).map((part, i) => {
               if (part.startsWith("#")) {
@@ -292,63 +305,89 @@ export function PostCard({ post }: PostCardProps) {
       )}
 
       {/* Media */}
-      {post.post_media && post.post_media.length > 0 && (
+      {post.media_urls && post.media_urls.length > 0 && (
         <div className="mt-3 px-5">
           <div
             className={cn(
               "overflow-hidden rounded-xl",
-              post.post_media.length > 1 && "grid grid-cols-2 gap-1"
+              post.media_urls.length > 1 && "grid grid-cols-2 gap-1"
             )}
           >
-            {post.post_media
-              .sort((a, b) => a.sort_order - b.sort_order)
-              .map((media) => (
-                <div
-                  key={media.id}
-                  className="relative overflow-hidden bg-surface"
-                >
-                  {media.media_type === "video" ? (
+            {post.media_urls.map((url, i) => {
+              const mediaType = post.media_types?.[i] || "image";
+              return (
+                <div key={url} className="relative overflow-hidden bg-surface">
+                  {mediaType === "video" ? (
                     <video
-                      src={media.url}
+                      src={url}
                       controls
                       className="w-full rounded-xl"
                       preload="metadata"
                     />
                   ) : (
                     <img
-                      src={media.url}
+                      src={url}
                       alt="Post media"
                       className="w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
-                      style={{
-                        maxHeight: "400px",
-                      }}
+                      style={{ maxHeight: "400px" }}
                       loading="lazy"
                     />
                   )}
                 </div>
-              ))}
+              );
+            })}
           </div>
+        </div>
+      )}
+
+      {/* Link Preview (OpenGraph) */}
+      {post.link_preview && (
+        <div className="mt-3 px-5">
+          <a
+            href={post.link_url || "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col sm:flex-row overflow-hidden rounded-xl border border-border bg-surface/30 hover:bg-surface/50 transition-colors"
+          >
+            {post.link_preview.image && (
+              <img
+                src={post.link_preview.image}
+                alt={post.link_preview.title || "Preview"}
+                className="h-40 sm:h-auto sm:w-40 object-cover shrink-0"
+              />
+            )}
+            <div className="p-4 flex flex-col justify-center min-w-0">
+              <span className="text-[10px] uppercase font-bold text-accent tracking-wider">
+                {post.link_preview.domain}
+              </span>
+              <h4 className="text-sm font-semibold mt-1 text-text-primary truncate">
+                {post.link_preview.title}
+              </h4>
+              <p className="text-xs text-text-muted mt-1 line-clamp-2 leading-relaxed">
+                {post.link_preview.description}
+              </p>
+            </div>
+          </a>
         </div>
       )}
 
       {/* Interactions */}
       <div className="flex items-center gap-1 px-3 py-3 border-b border-border/20">
-        {/* Like */}
         <button
           onClick={handleLike}
           disabled={isPending}
           className={cn(
             "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
-            post.has_liked
+            post.is_liked
               ? "text-rose-400"
               : "text-text-muted hover:text-rose-400 hover:bg-rose-400/10"
           )}
-          aria-label={post.has_liked ? "Unlike post" : "Like post"}
+          aria-label={post.is_liked ? "Unlike post" : "Like post"}
         >
           <Heart
             className={cn(
               "h-[18px] w-[18px] transition-all duration-200",
-              post.has_liked && "fill-current",
+              post.is_liked && "fill-rose-400",
               isLikeAnimating && "animate-[heart-burst_0.4s_ease-out]"
             )}
           />
@@ -357,7 +396,6 @@ export function PostCard({ post }: PostCardProps) {
           )}
         </button>
 
-        {/* Comment */}
         <button
           onClick={toggleComments}
           className={cn(
@@ -369,32 +407,30 @@ export function PostCard({ post }: PostCardProps) {
           aria-label="Comment on post"
         >
           <MessageCircle className="h-[18px] w-[18px]" />
-          {commentsCount > 0 && (
-            <span className="text-xs font-medium">{commentsCount}</span>
+          {post.comments_count > 0 && (
+            <span className="text-xs font-medium">{post.comments_count}</span>
           )}
         </button>
 
-        {/* Save */}
         <button
           onClick={handleSave}
           disabled={isPending}
           className={cn(
             "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
-            post.has_saved
+            post.is_bookmarked
               ? "text-amber-400"
               : "text-text-muted hover:text-amber-400 hover:bg-amber-400/10"
           )}
-          aria-label={post.has_saved ? "Unsave post" : "Save post"}
+          aria-label={post.is_bookmarked ? "Unsave post" : "Save post"}
         >
           <Bookmark
             className={cn(
               "h-[18px] w-[18px] transition-all duration-200",
-              post.has_saved && "fill-current"
+              post.is_bookmarked && "fill-amber-400"
             )}
           />
         </button>
 
-        {/* Share */}
         <button
           onClick={handleShare}
           className={cn(
@@ -408,7 +444,9 @@ export function PostCard({ post }: PostCardProps) {
           {copied ? (
             <>
               <Check className="h-[18px] w-[18px] text-success" />
-              <span className="text-[10.5px] font-semibold animate-fade-in text-success">Copied!</span>
+              <span className="text-[10.5px] font-semibold text-success animate-fade-in">
+                Copied!
+              </span>
             </>
           ) : (
             <Share2 className="h-[18px] w-[18px]" />
@@ -416,7 +454,7 @@ export function PostCard({ post }: PostCardProps) {
         </button>
       </div>
 
-      {/* Comments Section Drawer Expand */}
+      {/* Comments Drawer Expansion */}
       <AnimatePresence initial={false}>
         {showComments && (
           <motion.div
@@ -427,7 +465,7 @@ export function PostCard({ post }: PostCardProps) {
             className="overflow-hidden bg-surface/15"
           >
             <div className="px-5 py-4 space-y-4">
-              {/* Comment input form */}
+              {/* Comment submission form */}
               <form onSubmit={handleCommentSubmit} className="space-y-2">
                 {replyingTo && (
                   <div className="flex items-center justify-between bg-accent/15 border border-accent/35 rounded-xl px-3 py-1.5 text-xs text-accent">
@@ -445,22 +483,21 @@ export function PostCard({ post }: PostCardProps) {
                   </div>
                 )}
                 <div className="flex gap-3">
-                  {user?.avatar_url ? (
-                    <img
-                      src={user.avatar_url}
-                      alt={user.display_name}
-                      className="h-8.5 w-8.5 rounded-full object-cover ring-1 ring-border shrink-0"
-                    />
-                  ) : (
-                    <div className="flex h-8.5 w-8.5 items-center justify-center rounded-full bg-accent-muted text-xs font-semibold text-accent ring-1 ring-border shrink-0">
-                      {user ? getInitials(user.display_name) : "?"}
-                    </div>
-                  )}
+                  <UserAvatar
+                    src={user?.avatar_url}
+                    name={user?.display_name || "User"}
+                    size="xs"
+                    isOnline={true}
+                  />
                   <div className="relative flex-1">
                     <input
                       ref={commentInputRef}
                       type="text"
-                      placeholder={replyingTo ? `Reply to @${replyingTo.username}...` : "Write a comment..."}
+                      placeholder={
+                        replyingTo
+                          ? `Reply to @${replyingTo.username}...`
+                          : "Write a comment..."
+                      }
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       className="w-full rounded-xl border border-border/50 bg-surface/50 py-2.5 pl-4 pr-10 text-xs text-text-primary placeholder:text-text-muted outline-none transition-all duration-200 focus:border-accent/60 focus:bg-surface focus:shadow-glow"
@@ -480,41 +517,31 @@ export function PostCard({ post }: PostCardProps) {
                 </div>
               </form>
 
-              {/* Comments view list */}
-              <div className="space-y-4 max-h-[350px] overflow-y-auto scrollbar-thin pr-1">
+              {/* Comments list */}
+              <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
                 {loadingComments ? (
                   <div className="flex justify-center py-6">
                     <Loader2 className="h-5 w-5 animate-spin text-accent" />
                   </div>
                 ) : rootComments.length > 0 ? (
                   rootComments.map((c) => (
-                    <div key={c.id} className="space-y-3">
+                    <div key={c.id} className="space-y-3 border-b border-border/10 pb-3 last:border-0 last:pb-0">
                       {/* Root Comment Row */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex gap-3"
-                      >
-                        {c.profiles?.avatar_url ? (
-                          <img
-                            src={c.profiles.avatar_url}
-                            alt={c.profiles.display_name}
-                            className="h-8 w-8 rounded-full object-cover ring-1 ring-border shrink-0"
-                          />
-                        ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-muted text-xs font-bold text-accent ring-1 ring-border shrink-0">
-                            {getInitials(c.profiles?.display_name || "User")}
-                          </div>
-                        )}
+                      <div className="flex gap-3">
+                        <UserAvatar
+                          src={c.author?.avatar_url}
+                          name={c.author?.display_name || "User"}
+                          size="xs"
+                        />
                         <div className="flex-1">
                           <div className="rounded-2xl bg-surface/40 px-3.5 py-2.5 border border-border/20">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-baseline gap-1.5 min-w-0">
                                 <span className="text-xs font-semibold text-text-primary truncate">
-                                  {c.profiles?.display_name}
+                                  {c.author?.display_name}
                                 </span>
                                 <span className="text-[10px] text-text-muted truncate hidden sm:inline">
-                                  @{c.profiles?.username}
+                                  @{c.author?.username}
                                 </span>
                               </div>
                               <span className="text-[9px] text-text-muted shrink-0">
@@ -525,14 +552,13 @@ export function PostCard({ post }: PostCardProps) {
                               {c.content}
                             </p>
                           </div>
-                          
-                          {/* Actions Bar */}
+
                           <div className="flex items-center gap-3 mt-1 px-1.5">
                             <button
                               onClick={() => {
                                 setReplyingTo({
                                   id: c.id,
-                                  username: c.profiles?.username || c.profiles?.display_name || "user"
+                                  username: c.author?.username || "user",
                                 });
                                 commentInputRef.current?.focus();
                               }}
@@ -542,85 +568,42 @@ export function PostCard({ post }: PostCardProps) {
                             </button>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
 
-                      {/* Nested Replies */}
-                      {(() => {
-                        const rootReplies = comments.filter(
-                          (reply) => reply.parent_id !== null && getRootId(reply.id, comments) === c.id
-                        );
-                        if (rootReplies.length === 0) return null;
-                        return (
-                          <div className="pl-6 mt-2.5 space-y-3 border-l-2 border-border/10 ml-4">
-                            {rootReplies.map((reply) => {
-                              const parentComment = comments.find((pc) => pc.id === reply.parent_id);
-                              const parentUsername = parentComment?.profiles?.username || parentComment?.profiles?.display_name;
-
-                              return (
-                                <motion.div
-                                  key={reply.id}
-                                  initial={{ opacity: 0, y: 4 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  className="flex gap-2.5 animate-fade-in"
-                                >
-                                  {reply.profiles?.avatar_url ? (
-                                    <img
-                                      src={reply.profiles.avatar_url}
-                                      alt={reply.profiles.display_name}
-                                      className="h-6.5 w-6.5 rounded-full object-cover ring-1 ring-border shrink-0"
-                                    />
-                                  ) : (
-                                    <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-accent-muted text-[10px] font-bold text-accent ring-1 ring-border shrink-0">
-                                      {getInitials(reply.profiles?.display_name || "User")}
+                      {/* Replies */}
+                      {c.replies && c.replies.length > 0 && (
+                        <div className="pl-6 space-y-3 border-l border-border/10 ml-4">
+                          {c.replies.map((reply) => (
+                            <div key={reply.id} className="flex gap-2.5">
+                              <UserAvatar
+                                src={reply.author?.avatar_url}
+                                name={reply.author?.display_name || "User"}
+                                size="xs"
+                              />
+                              <div className="flex-1">
+                                <div className="rounded-2xl bg-surface/20 px-3 py-2 border border-border/15">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-baseline gap-1.5 min-w-0">
+                                      <span className="text-[11px] font-semibold text-text-primary truncate">
+                                        {reply.author?.display_name}
+                                      </span>
+                                      <span className="text-[9px] text-text-muted truncate hidden sm:inline">
+                                        @{reply.author?.username}
+                                      </span>
                                     </div>
-                                  )}
-                                  <div className="flex-1">
-                                    <div className="rounded-2xl bg-surface/20 px-3 py-2 border border-border/15">
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-baseline gap-1.5 min-w-0">
-                                          <span className="text-[11px] font-semibold text-text-primary truncate">
-                                            {reply.profiles?.display_name}
-                                          </span>
-                                          <span className="text-[9px] text-text-muted truncate hidden sm:inline">
-                                            @{reply.profiles?.username}
-                                          </span>
-                                        </div>
-                                        <span className="text-[8px] text-text-muted shrink-0">
-                                          {formatRelativeTime(reply.created_at)}
-                                        </span>
-                                      </div>
-                                      {parentUsername && (
-                                        <span className="text-[9.5px] text-accent font-medium mt-0.5 block">
-                                          Replying to @{parentUsername}
-                                        </span>
-                                      )}
-                                      <p className="mt-0.5 text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
-                                        {reply.content}
-                                      </p>
-                                    </div>
-                                    
-                                    {/* Action Bar for Reply */}
-                                    <div className="flex items-center gap-3 mt-1 px-1.5">
-                                      <button
-                                        onClick={() => {
-                                          setReplyingTo({
-                                            id: reply.id,
-                                            username: reply.profiles?.username || reply.profiles?.display_name || "user"
-                                          });
-                                          commentInputRef.current?.focus();
-                                        }}
-                                        className="text-[10px] font-bold text-text-muted hover:text-accent transition-colors cursor-pointer"
-                                      >
-                                        Reply
-                                      </button>
-                                    </div>
+                                    <span className="text-[8px] text-text-muted shrink-0">
+                                      {formatRelativeTime(reply.created_at)}
+                                    </span>
                                   </div>
-                                </motion.div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
+                                  <p className="mt-0.5 text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
+                                    {reply.content}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -628,7 +611,9 @@ export function PostCard({ post }: PostCardProps) {
                     <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-surface border border-border/40 text-text-muted">
                       <MessageSquare className="h-4.5 w-4.5" />
                     </div>
-                    <p className="text-xs text-text-muted">No comments yet. Say something!</p>
+                    <p className="text-xs text-text-muted">
+                      No comments yet. Say something!
+                    </p>
                   </div>
                 )}
               </div>

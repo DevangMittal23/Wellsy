@@ -1,10 +1,10 @@
 import { create } from "zustand";
-import type { Profile } from "@/types/user";
+import type { User } from "@/types";
 
 interface AuthState {
-  user: Profile | null;
+  user: User | null;
   isLoading: boolean;
-  setUser: (user: Profile | null) => void;
+  setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   reset: () => void;
 }

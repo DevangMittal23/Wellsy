@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { getFeedPosts } from "@/actions/post-actions";
+import { getFeedPosts } from "@/actions/posts";
 import { FeedList } from "@/components/feed/feed-list";
-import type { Post } from "@/types/post";
+import type { Post } from "@/types";
 
 export const metadata: Metadata = {
   title: "Feed",
-  description: "See what your community is sharing on WELLSY.",
+  description: "See what your community is sharing on HUDdang.",
 };
 
 export default async function FeedPage() {
@@ -16,7 +16,7 @@ export default async function FeedPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text-primary">Feed</h1>
         <p className="text-sm text-text-secondary">
-          See what&apos;s happening in your world
+          See what's happening in your world
         </p>
       </div>
 

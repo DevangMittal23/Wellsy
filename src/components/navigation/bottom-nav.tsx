@@ -6,9 +6,9 @@ import { motion } from "framer-motion";
 import { Home, Search, PlusSquare, Bell, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { useNotificationStore } from "@/stores/notification-store";
-import { useChatStore } from "@/stores/chat-store";
-import { getPendingFriendRequests } from "@/actions/friend-actions";
+import { useNotifications } from "@/hooks/use-notifications";
+import { useConversations } from "@/hooks/use-conversations";
+import { getPendingRequests } from "@/actions/friendships";
 import { useEffect, useState } from "react";
 
 const navItems = [
@@ -22,15 +22,21 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { unreadCount: notifUnread } = useNotificationStore();
-  const { totalUnread: chatUnread } = useChatStore();
+  
+  // Real-time unread counts automatically synced via hooks
+  const { unreadCount: notifUnread } = useNotifications();
+  const { totalUnread: chatUnread } = useConversations();
   const [friendsUnread, setFriendsUnread] = useState(0);
 
   // Fetch pending requests count on mount
   useEffect(() => {
     async function fetchFriendsCount() {
-      const pending = await getPendingFriendRequests();
-      setFriendsUnread(pending?.length || 0);
+      try {
+        const pending = await getPendingRequests();
+        setFriendsUnread(pending?.length || 0);
+      } catch (err) {
+        console.error(err);
+      }
     }
     if (user?.id) {
       fetchFriendsCount();

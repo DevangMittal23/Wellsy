@@ -114,9 +114,9 @@ export default function AppearancePage() {
   // Load configuration on mount
   useEffect(() => {
     try {
-      const storedTheme = localStorage.getItem("wellsy_appearance_theme") || "sleek";
-      const storedAccent = localStorage.getItem("wellsy_appearance_accent") || "purple";
-      const storedGlass = localStorage.getItem("wellsy_appearance_glass") !== "false";
+      const storedTheme = localStorage.getItem("huddang_appearance_theme") || "sleek";
+      const storedAccent = localStorage.getItem("huddang_appearance_accent") || "purple";
+      const storedGlass = localStorage.getItem("huddang_appearance_glass") !== "false";
 
       setActiveTheme(storedTheme);
       setActiveAccent(storedAccent);
@@ -131,7 +131,7 @@ export default function AppearancePage() {
 
     setActiveTheme(themeId);
     try {
-      localStorage.setItem("wellsy_appearance_theme", themeId);
+      localStorage.setItem("huddang_appearance_theme", themeId);
       
       // Inject CSS properties live
       const root = document.documentElement;
@@ -154,7 +154,7 @@ export default function AppearancePage() {
 
     setActiveAccent(accentId);
     try {
-      localStorage.setItem("wellsy_appearance_accent", accentId);
+      localStorage.setItem("huddang_appearance_accent", accentId);
 
       // Inject CSS properties live
       const root = document.documentElement;
@@ -172,7 +172,7 @@ export default function AppearancePage() {
     const newGlass = !glassEffects;
     setGlassEffects(newGlass);
     try {
-      localStorage.setItem("wellsy_appearance_glass", String(newGlass));
+      localStorage.setItem("huddang_appearance_glass", String(newGlass));
       setTimeout(() => setSavedStatus("All changes saved"), 600);
     } catch (e) {}
   };

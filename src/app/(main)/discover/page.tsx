@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { getSuggestedPeople, getPendingFriendRequests } from "@/actions/friend-actions";
+import { getSuggestedUsers, getPendingRequests } from "@/actions/friendships";
 import { PeopleGrid } from "@/components/friends/people-grid";
 import { FriendRequestCard } from "@/components/friends/friend-request-card";
 import { Users, UserPlus } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Discover People",
-  description: "Find and connect with people on WELLSY.",
+  description: "Find and connect with people on HUDdang.",
 };
 
 export default async function DiscoverPage() {
   const [suggested, pendingRequests] = await Promise.all([
-    getSuggestedPeople(),
-    getPendingFriendRequests(),
+    getSuggestedUsers(),
+    getPendingRequests(),
   ]);
 
   return (
@@ -42,7 +42,7 @@ export default async function DiscoverPage() {
             {pendingRequests.map((request) => (
               <FriendRequestCard
                 key={request.id}
-                request={request as { id: string; sender_id: string; created_at: string; sender?: { id: string; username: string; display_name: string; avatar_url: string | null; bio: string | null; is_online: boolean } }}
+                request={request}
               />
             ))}
           </div>
@@ -57,9 +57,7 @@ export default async function DiscoverPage() {
             People you may know
           </h2>
         </div>
-        <PeopleGrid
-          people={suggested as { id: string; username: string; display_name: string; avatar_url: string | null; bio: string | null; is_online: boolean; followers_count: number }[]}
-        />
+        <PeopleGrid people={suggested} />
       </div>
     </div>
   );

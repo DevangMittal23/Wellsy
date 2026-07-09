@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getCurrentProfile } from "@/actions/profile-actions";
+import { getCurrentUser } from "@/actions/auth";
 import { EditProfileForm } from "@/components/profile/edit-profile-form";
-import type { Profile } from "@/types/user";
 
 export const metadata: Metadata = {
   title: "Edit Profile",
-  description: "Edit your WELLSY profile — update your avatar, bio, skills, and more.",
+  description: "Edit your HUDdang profile — update your avatar, username, display name, and bio.",
 };
 
 export default async function EditProfilePage() {
-  const profile = await getCurrentProfile();
+  const profile = await getCurrentUser();
 
   if (!profile) {
     redirect("/login");
   }
 
-  return <EditProfileForm profile={profile as Profile} />;
+  return <EditProfileForm profile={profile} />;
 }

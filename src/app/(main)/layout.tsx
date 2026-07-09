@@ -1,6 +1,8 @@
 import { Sidebar } from "@/components/navigation/sidebar";
 import { BottomNav } from "@/components/navigation/bottom-nav";
 import { ContentContainer } from "@/components/navigation/content-container";
+import { CallModal } from "@/components/chat/call-modal";
+import { CallRoom } from "@/components/chat/call-room";
 
 export default function MainLayout({
   children,
@@ -19,6 +21,10 @@ export default function MainLayout({
 
       {/* Mobile bottom nav */}
       <BottomNav />
+
+      {/* Global Call Overlays */}
+      <CallModal />
+      <CallRoom />
     </div>
   );
 }

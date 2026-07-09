@@ -4,14 +4,13 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PostCard } from "@/components/feed/post-card";
 import { cn } from "@/lib/utils";
-import type { Post } from "@/types/post";
-import { getLikedPosts, getSavedPosts } from "@/actions/post-actions";
-import { Loader2, Heart, Bookmark, EyeOff } from "lucide-react";
+import type { Post } from "@/types";
+import { getBookmarkedPosts } from "@/actions/posts";
+import { Loader2, Bookmark, EyeOff } from "lucide-react";
 
 const tabs = [
   { id: "posts", label: "Posts" },
-  { id: "likes", label: "Likes" },
-  { id: "saved", label: "Saved" },
+  { id: "bookmarked", label: "Bookmarked" },
   { id: "media", label: "Media" },
 ];
 
@@ -23,59 +22,41 @@ interface ProfileTabsProps {
 
 export function ProfileTabs({ posts, userId, isOwnProfile }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState("posts");
-  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
-  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
-  const [loadingLikes, setLoadingLikes] = useState(false);
-  const [loadingSaved, setLoadingSaved] = useState(false);
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[]>([]);
+  const [loadingBookmarked, setLoadingBookmarked] = useState(false);
 
-  // Filter tabs for non-owners (hide saved)
+  // Filter out Bookmarked tab for other users
   const visibleTabs = isOwnProfile
     ? tabs
-    : tabs.filter((t) => t.id !== "saved");
+    : tabs.filter((t) => t.id !== "bookmarked");
 
   const filteredPosts = posts.filter((post) => {
     if (activeTab === "media") {
-      return post.post_media && post.post_media.length > 0;
+      return post.media_urls && post.media_urls.length > 0;
     }
     return true;
   });
 
-  // Fetch likes and saves dynamically on active tab changes
+  // Fetch bookmarked posts on tab switch
   useEffect(() => {
-    async function fetchLikes() {
-      setLoadingLikes(true);
+    async function fetchBookmarks() {
+      setLoadingBookmarked(true);
       try {
-        const res = await getLikedPosts(userId);
+        const res = await getBookmarkedPosts();
         if (res && res.posts) {
-          setLikedPosts(res.posts as Post[]);
+          setBookmarkedPosts(res.posts as Post[]);
         }
       } catch (err) {
-        console.error("Failed to load liked posts:", err);
+        console.error("Failed to load bookmarks:", err);
       } finally {
-        setLoadingLikes(false);
+        setLoadingBookmarked(false);
       }
     }
 
-    async function fetchSaved() {
-      setLoadingSaved(true);
-      try {
-        const res = await getSavedPosts();
-        if (res && res.posts) {
-          setSavedPosts(res.posts as Post[]);
-        }
-      } catch (err) {
-        console.error("Failed to load saved posts:", err);
-      } finally {
-        setLoadingSaved(false);
-      }
+    if (activeTab === "bookmarked" && isOwnProfile) {
+      fetchBookmarks();
     }
-
-    if (activeTab === "likes") {
-      fetchLikes();
-    } else if (activeTab === "saved" && isOwnProfile) {
-      fetchSaved();
-    }
-  }, [activeTab, userId, isOwnProfile]);
+  }, [activeTab, isOwnProfile]);
 
   return (
     <div>
@@ -133,38 +114,14 @@ export function ProfileTabs({ posts, userId, isOwnProfile }: ProfileTabsProps) {
           </>
         )}
 
-        {activeTab === "likes" && (
+        {activeTab === "bookmarked" && isOwnProfile && (
           <>
-            {loadingLikes ? (
+            {loadingBookmarked ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-accent" />
               </div>
-            ) : likedPosts.length > 0 ? (
-              likedPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))
-            ) : (
-              <div className="glass-card py-16 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface border border-border/50 text-rose-400">
-                  <Heart className="h-6 w-6" />
-                </div>
-                <p className="text-sm font-medium text-text-secondary">No liked posts yet</p>
-                <p className="mt-1 text-xs text-text-muted">
-                  {isOwnProfile ? "Posts you like on the feed will appear here." : "Liked posts will appear here."}
-                </p>
-              </div>
-            )}
-          </>
-        )}
-
-        {activeTab === "saved" && isOwnProfile && (
-          <>
-            {loadingSaved ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-accent" />
-              </div>
-            ) : savedPosts.length > 0 ? (
-              savedPosts.map((post) => (
+            ) : bookmarkedPosts.length > 0 ? (
+              bookmarkedPosts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))
             ) : (
@@ -172,9 +129,9 @@ export function ProfileTabs({ posts, userId, isOwnProfile }: ProfileTabsProps) {
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface border border-border/50 text-amber-400">
                   <Bookmark className="h-6 w-6" />
                 </div>
-                <p className="text-sm font-medium text-text-secondary">No saved posts yet</p>
+                <p className="text-sm font-medium text-text-secondary">No bookmarked posts yet</p>
                 <p className="mt-1 text-xs text-text-muted">
-                  Posts you save from your feed will be visible only to you here.
+                  Posts you bookmark from the feed will be visible only to you here.
                 </p>
               </div>
             )}
@@ -186,13 +143,13 @@ export function ProfileTabs({ posts, userId, isOwnProfile }: ProfileTabsProps) {
             {filteredPosts.length > 0 ? (
               <div className="grid grid-cols-3 gap-2 overflow-hidden rounded-xl">
                 {filteredPosts.flatMap((post) =>
-                  (post.post_media || []).map((media) => (
+                  (post.media_urls || []).map((url) => (
                     <div
-                      key={media.id}
+                      key={url}
                       className="relative aspect-square overflow-hidden bg-surface rounded-xl border border-border/40"
                     >
                       <img
-                        src={media.url}
+                        src={url}
                         alt="Media"
                         className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
                         loading="lazy"

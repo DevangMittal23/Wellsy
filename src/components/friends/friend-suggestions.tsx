@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar } from "@/components/shared/avatar";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, Check, Flame } from "lucide-react";
 import Link from "next/link";
+import type { User } from "@/types";
 
 interface FriendSuggestionsProps {
-  suggestions: any[];
+  suggestions: User[];
   onSendRequest: (userId: string) => Promise<any>;
 }
 
@@ -71,10 +72,11 @@ export function FriendSuggestions({
                 href={`/profile/${person.username}`}
                 className="flex items-center gap-3 min-w-0 group"
               >
-                <Avatar
+                <UserAvatar
                   src={person.avatar_url}
                   name={person.display_name}
-                  isOnline={person.is_online}
+                  isOnline={true}
+                  size="sm"
                 />
                 <div className="min-w-0">
                   <p className="font-semibold text-sm text-text-primary truncate group-hover:text-accent transition-colors">
@@ -89,7 +91,7 @@ export function FriendSuggestions({
                     </p>
                   ) : (
                     <p className="text-[11px] text-text-muted truncate mt-0.5">
-                      Popular on WELLSY
+                      Popular on HUDdang
                     </p>
                   )}
                 </div>
@@ -99,7 +101,7 @@ export function FriendSuggestions({
               <button
                 disabled={isSent || isLoading}
                 onClick={() => handleSend(person.id)}
-                className={`flex h-9 items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-80 ${
+                className={`flex h-9 items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-80 cursor-pointer ${
                   isSent
                     ? "bg-success/10 text-success cursor-default"
                     : "bg-accent text-white hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/25"

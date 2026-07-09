@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getCurrentProfile } from "@/actions/profile-actions";
-import { signOut } from "@/actions/auth-actions";
+import { getCurrentUser } from "@/actions/auth";
+import { signOut } from "@/actions/auth";
 import {
   User,
   Shield,
@@ -11,20 +11,21 @@ import {
   Edit3,
 } from "lucide-react";
 import Link from "next/link";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 export const metadata: Metadata = {
   title: "Settings",
-  description: "Manage your WELLSY account settings.",
+  description: "Manage your HUDdang account settings.",
 };
 
 export default async function SettingsPage() {
-  const profile = await getCurrentProfile();
+  const profile = await getCurrentUser();
 
   const settingSections = [
     {
       icon: User,
       title: "Edit Profile",
-      description: "Update your avatar, bio, skills, and more",
+      description: "Update your avatar, username, and bio",
       href: "/settings/profile",
       accent: true,
     },
@@ -64,22 +65,12 @@ export default async function SettingsPage() {
           className="group glass-card mb-6 flex items-center gap-4 p-5 transition-all duration-200 hover:shadow-xl hover:border-accent/20"
         >
           <div className="relative">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.display_name}
-                className="h-14 w-14 rounded-full object-cover ring-2 ring-border transition-all duration-200 group-hover:ring-accent/50"
-              />
-            ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted text-lg font-bold text-accent ring-2 ring-border transition-all duration-200 group-hover:ring-accent/50">
-                {profile.display_name
-                  .split(" ")
-                  .map((w: string) => w[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)}
-              </div>
-            )}
+            <UserAvatar
+              src={profile.avatar_url}
+              name={profile.display_name}
+              size="md"
+              className="ring-2 ring-border group-hover:ring-accent/50 transition-all duration-200"
+            />
             {/* Edit badge */}
             <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white shadow-md transition-transform group-hover:scale-110">
               <Edit3 className="h-3 w-3" />
@@ -132,26 +123,14 @@ export default async function SettingsPage() {
             section.accent ? "hover:border-accent/20" : ""
           }`;
 
-          if (section.href) {
-            return (
-              <Link
-                key={section.title}
-                href={section.href}
-                className={sharedClassName}
-              >
-                {content}
-              </Link>
-            );
-          }
-
           return (
-            <div
+            <Link
               key={section.title}
-              className={`${sharedClassName} cursor-default opacity-60`}
-              title="Coming soon"
+              href={section.href}
+              className={sharedClassName}
             >
               {content}
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -160,7 +139,7 @@ export default async function SettingsPage() {
       <form action={signOut} className="mt-6">
         <button
           type="submit"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-error/30 bg-error-muted px-4 py-3 text-sm font-medium text-error transition-all duration-200 hover:bg-error/20 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-error/30 bg-error-muted px-4 py-3 text-sm font-medium text-error transition-all duration-200 hover:bg-error/20 active:scale-[0.98] cursor-pointer"
         >
           <LogOut className="h-4 w-4" />
           Sign out

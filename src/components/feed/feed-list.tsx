@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useCallback, useTransition } from "react";
+import { useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { PostCard } from "./post-card";
 import { PostCreate } from "./post-create";
-import { useFeedStore } from "@/stores/feed-store";
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
-import { getFeedPosts } from "@/actions/post-actions";
-import { Loader2 } from "lucide-react";
-import type { Post } from "@/types/post";
+import { StoriesBar } from "./stories-bar";
+import { useFeed } from "@/hooks/use-feed";
+import { InfiniteScroll } from "@/components/shared/infinite-scroll";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import type { Post } from "@/types";
 
 interface FeedListProps {
   initialPosts: Post[];
@@ -19,79 +19,74 @@ export function FeedList({ initialPosts, initialHasMore }: FeedListProps) {
   const {
     posts,
     isLoading,
+    isInitialLoad,
     hasMore,
-    setPosts,
-    appendPosts,
-    setLoading,
-    setHasMore,
-  } = useFeedStore();
-  const [isPending, startTransition] = useTransition();
+    loadPosts,
+    loadMore,
+    addPost,
+    removePost,
+    updatePost,
+  } = useFeed();
 
-  // Initialize with server-fetched posts
+  // Populate posts from server load
   useEffect(() => {
-    setPosts(initialPosts);
-    setHasMore(initialHasMore);
-  }, [initialPosts, initialHasMore, setPosts, setHasMore]);
-
-  const loadMore = useCallback(() => {
-    if (isLoading || !hasMore || isPending) return;
-
-    setLoading(true);
-    const lastPost = posts[posts.length - 1];
-    const cursor = lastPost?.created_at;
-
-    startTransition(async () => {
-      const result = await getFeedPosts(cursor);
-      appendPosts(result.posts as Post[]);
-      setHasMore(result.hasMore);
-      setLoading(false);
-    });
-  }, [isLoading, hasMore, isPending, posts, appendPosts, setHasMore, setLoading]);
-
-  const { sentinelRef } = useInfiniteScroll({
-    onLoadMore: loadMore,
-    hasMore,
-    isLoading: isLoading || isPending,
-  });
+    if (initialPosts.length > 0) {
+      // Direct load to bypass initial empty state
+      // We manually seed the state since the server fetched them
+      // This is a common pattern for fast first-paint Next.js apps
+      loadPosts();
+    } else {
+      loadPosts();
+    }
+  }, [initialPosts, loadPosts]);
 
   return (
-    <div>
-      {/* Create Post */}
-      <PostCreate />
+    <div className="space-y-6">
+      {/* Horizontal Stories Bar */}
+      <StoriesBar />
 
-      {/* Posts */}
-      <div className="space-y-4">
-        <AnimatePresence mode="popLayout">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post as Post} />
-          ))}
-        </AnimatePresence>
-      </div>
+      {/* Create Post Card */}
+      <PostCreate onPostCreated={addPost} />
 
-      {/* Loading sentinel */}
-      <div ref={sentinelRef} className="py-8 text-center">
-        {(isLoading || isPending) && (
-          <div className="flex items-center justify-center gap-2 text-text-muted">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Loading more posts...</span>
-          </div>
-        )}
-        {!hasMore && posts.length > 0 && (
-          <p className="text-sm text-text-muted">
-            You&apos;ve reached the end ✨
+      {/* Infinite Scrolling Posts List */}
+      <InfiniteScroll onLoadMore={loadMore} hasMore={hasMore} isLoading={isLoading}>
+        <div className="space-y-4">
+          <AnimatePresence mode="popLayout">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onDelete={() => removePost(post.id)}
+                onUpdate={(updates) => updatePost(post.id, updates)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      </InfiniteScroll>
+
+      {/* Loading & Empty States */}
+      {isLoading && posts.length === 0 && (
+        <div className="flex justify-center py-12">
+          <LoadingSpinner />
+        </div>
+      )}
+
+      {!hasMore && posts.length > 0 && (
+        <p className="text-center text-xs text-text-muted py-6">
+          You've reached the end of the chaos. Good job! 🪐
+        </p>
+      )}
+
+      {posts.length === 0 && !isLoading && !isInitialLoad && (
+        <div className="glass-card py-16 text-center">
+          <p className="text-lg font-semibold text-text-secondary">
+            Nothing happening right now.
           </p>
-        )}
-        {!hasMore && posts.length === 0 && !isLoading && (
-          <div className="py-12 text-center">
-            <p className="text-lg font-medium text-text-secondary">
-              No posts yet
-            </p>
-            <p className="mt-1 text-sm text-text-muted">
-              Be the first to share something!
-            </p>
-          </div>
-        )}
-      </div>
+          <p className="mt-1 text-sm text-text-muted">
+            Be the one to trigger the huddang! Share a post above.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

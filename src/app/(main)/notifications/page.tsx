@@ -1,16 +1,12 @@
 import type { Metadata } from "next";
-import { getNotifications, getUnreadNotificationCount } from "@/actions/notification-actions";
 import { NotificationList } from "@/components/notifications/notification-list";
-import type { Notification } from "@/types/notification";
 
 export const metadata: Metadata = {
   title: "Notifications",
-  description: "Your latest notifications on WELLSY.",
+  description: "Your latest notifications on HUDdang.",
 };
 
-export default async function NotificationsPage() {
-  const { notifications, hasMore } = await getNotifications();
-
+export default function NotificationsPage() {
   return (
     <div>
       <div className="mb-6">
@@ -20,10 +16,7 @@ export default async function NotificationsPage() {
         </p>
       </div>
 
-      <NotificationList
-        initialNotifications={notifications as Notification[]}
-        initialHasMore={hasMore}
-      />
+      <NotificationList />
     </div>
   );
 }
