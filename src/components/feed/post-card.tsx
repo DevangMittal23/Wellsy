@@ -407,7 +407,7 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
         >
           <motion.div
             animate={post.is_liked ? { scale: [1, 1.4, 1] } : { scale: 1 }}
-            transition={{ duration: 0.3, type: 'spring', stiffness: 400 }}
+            transition={{ type: "keyframes", duration: 0.3, ease: "easeInOut" }}
           >
             <Heart
               className={cn(

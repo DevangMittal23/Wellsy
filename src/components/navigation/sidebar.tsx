@@ -22,6 +22,8 @@ import { getPendingRequests } from "@/actions/friendships";
 import { cn, getInitials } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { PulsePicker } from "@/components/shared/pulse-picker";
+import { usePulse } from "@/hooks/use-pulse";
 
 const navItems = [
   { href: "/feed", icon: Home, label: "Home", badgeKey: "feed" as const },
@@ -40,6 +42,8 @@ export function Sidebar() {
   const { unreadCount: notifUnread } = useNotifications();
   const { totalUnread: chatUnread } = useConversations();
   const [friendsUnread, setFriendsUnread] = useState(0);
+  const [pulsePickerOpen, setPulsePickerOpen] = useState(false);
+  const { pulseType: myPulseType, updatePulse, removePulse } = usePulse(user?.id || "");
 
   // Fetch pending friend requests
   useEffect(() => {
@@ -86,16 +90,18 @@ export function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-dvh w-[240px] flex-col border-r border-white/[0.06] bg-background-secondary lg:flex">
-      {/* Logo */}
+      {/* Logo — static brand mark, never dynamic */}
       <div className="flex h-16 items-center px-6 border-b border-white/[0.06] mb-4">
-        <Link href="/feed" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-            <span className="text-sm font-bold text-white">H</span>
+        <div className="flex items-center gap-2 px-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 
+                          flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold text-sm font-display">H</span>
           </div>
-          <span className="gradient-text text-xl font-bold tracking-tight">
+          <span className="text-lg font-bold font-display bg-gradient-to-r from-purple-400 to-purple-600 
+                           bg-clip-text text-transparent">
             HUDdang
           </span>
-        </Link>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -152,25 +158,41 @@ export function Sidebar() {
       {/* User section */}
       <div className="border-t border-white/[0.06] pt-4 p-3">
         <div className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-surface">
-          <Link
-            href={user ? `/profile/${user.username}` : "/feed"}
-            className="flex flex-1 items-center gap-3"
-          >
-            <UserAvatar
-              src={user?.avatar_url}
-              name={user?.display_name || "User"}
-              size="sm"
-              isOnline={true}
-            />
-            <div className="flex-1 overflow-hidden">
+          <div className="relative flex flex-1 items-center gap-3 min-w-0">
+            <button
+              onClick={() => setPulsePickerOpen(!pulsePickerOpen)}
+              className="shrink-0 cursor-pointer"
+              title="Set your Pulse"
+            >
+              <UserAvatar
+                src={user?.avatar_url}
+                name={user?.display_name || "User"}
+                size="sm"
+                isOnline={true}
+                pulseType={myPulseType}
+              />
+            </button>
+            <Link
+              href={user ? `/profile/${user.username}` : "/feed"}
+              className="flex-1 overflow-hidden"
+            >
               <p className="truncate text-sm font-medium text-text-primary">
                 {user?.display_name || "Loading..."}
               </p>
               <p className="truncate text-xs text-text-muted">
                 @{user?.username || "..."}
               </p>
-            </div>
-          </Link>
+            </Link>
+            {user && (
+              <PulsePicker
+                isOpen={pulsePickerOpen}
+                onClose={() => setPulsePickerOpen(false)}
+                currentPulse={myPulseType}
+                onSetPulse={updatePulse}
+                onClearPulse={removePulse}
+              />
+            )}
+          </div>
 
           <div className="flex items-center gap-1">
             <Link

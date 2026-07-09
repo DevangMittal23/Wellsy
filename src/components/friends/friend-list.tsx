@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { User } from "@/types";
 import { toast } from "sonner";
+import { SignalBadge } from "@/components/shared/signal-badge";
 
 interface FriendListProps {
   friends: User[];
@@ -94,11 +95,19 @@ export function FriendList({ friends, onRemoveFriend }: FriendListProps) {
                   name={friend.display_name}
                   isOnline={true}
                   size="sm"
+                  pulseType={friend.pulse_type}
                 />
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm text-text-primary truncate group-hover:text-accent transition-colors">
-                    {friend.display_name}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm text-text-primary truncate group-hover:text-accent transition-colors">
+                      {friend.display_name}
+                    </p>
+                    <SignalBadge
+                      userId={friend.id}
+                      variant="compact"
+                      staticScore={friend.signal_score}
+                    />
+                  </div>
                   <p className="text-xs text-text-muted truncate">
                     @{friend.username}
                   </p>

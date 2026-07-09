@@ -94,6 +94,7 @@ export function ChatRoom({
               name={displayName}
               size="sm"
               isOnline={isUserOnline}
+              pulseType={otherUser?.pulse_type}
             />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-text-primary">

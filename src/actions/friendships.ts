@@ -206,10 +206,12 @@ export async function getFriends(): Promise<User[]> {
 
   if (!friendships) return [];
 
-  return friendships.map((f) => {
-    const friend = f.requester_id === user.id ? f.addressee : f.requester;
-    return friend as unknown as User;
-  });
+  return friendships
+    .map((f) => {
+      const friend = f.requester_id === user.id ? f.addressee : f.requester;
+      return friend as unknown as User;
+    })
+    .sort((a, b) => (b.signal_score ?? 0) - (a.signal_score ?? 0));
 }
 
 export async function getPendingRequests(): Promise<

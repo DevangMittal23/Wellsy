@@ -1,6 +1,8 @@
 "use client";
 
 import { cn, getInitials } from "@/lib/utils";
+import { PulseRing } from "./pulse-ring";
+import type { PulseType } from "@/types";
 
 interface UserAvatarProps {
   src?: string | null;
@@ -8,7 +10,17 @@ interface UserAvatarProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   isOnline?: boolean;
   className?: string;
+  /** Pass pulse type from pre-fetched user data. No realtime hook is used here. */
+  pulseType?: PulseType | null;
 }
+
+const sizePx: Record<string, number> = {
+  xs: 24,
+  sm: 36,
+  md: 48,
+  lg: 64,
+  xl: 96,
+};
 
 export function UserAvatar({
   src,
@@ -16,6 +28,7 @@ export function UserAvatar({
   size = "md",
   isOnline = false,
   className,
+  pulseType,
 }: UserAvatarProps) {
   const sizeClasses = {
     xs: "h-6 w-6 text-[10px]",
@@ -35,7 +48,7 @@ export function UserAvatar({
 
   const initials = getInitials(name);
 
-  return (
+  const avatarContent = (
     <div className={cn("relative shrink-0 select-none", className)}>
       {src ? (
         <img
@@ -59,7 +72,7 @@ export function UserAvatar({
         </div>
       )}
 
-      {isOnline && (
+      {isOnline && !pulseType && (
         <span
           className={cn(
             "absolute -bottom-0.5 -right-0.5 rounded-full border-background bg-success shadow-lg animate-pulse",
@@ -70,4 +83,15 @@ export function UserAvatar({
       )}
     </div>
   );
+
+  // Wrap with PulseRing if a pulse is active
+  if (pulseType) {
+    return (
+      <PulseRing pulseType={pulseType} size={sizePx[size]}>
+        {avatarContent}
+      </PulseRing>
+    );
+  }
+
+  return avatarContent;
 }

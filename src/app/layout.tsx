@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const inter = Inter({
@@ -64,8 +65,10 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} dark`}
       suppressHydrationWarning
     >
-      <head>
-        <script
+      <body className="min-h-dvh bg-background text-text-primary antialiased">
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               try {
@@ -127,8 +130,6 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className="min-h-dvh bg-background text-text-primary antialiased">
         {children}
       </body>
     </html>

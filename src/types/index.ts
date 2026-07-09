@@ -1,6 +1,68 @@
 // src/types/index.ts — HUDdang unified type definitions
 // Every type maps 1:1 to the database schema
 
+// ============================================================
+// PULSE + SIGNAL SCORE TYPES
+// ============================================================
+
+export type PulseType = 'chill' | 'active' | 'busy' | 'hyped'
+
+export type SignalTier = 'blazing' | 'warm' | 'steady' | 'quiet'
+
+export type SignalScoreBreakdown = {
+  posts: number
+  likes_received: number
+  comments_received: number
+  comments_made: number
+  messages_sent: number
+  messages_received: number
+  voice_notes: number
+  friend_accepts: number
+}
+
+export type SignalScoreHistory = {
+  id: string
+  user_id: string
+  score: number
+  calculated_at: string
+  breakdown: SignalScoreBreakdown
+}
+
+export const getSignalTier = (score: number): SignalTier => {
+  if (score >= 800) return 'blazing'
+  if (score >= 500) return 'warm'
+  if (score >= 200) return 'steady'
+  return 'quiet'
+}
+
+export const PULSE_CONFIG: Record<PulseType, {
+  label: string
+  color: string
+  glowColor: string
+  animationSpeed: string
+  emoji: string
+}> = {
+  chill:  { label: 'Chill',  color: '#F59E0B', glowColor: 'rgba(245, 158, 11, 0.4)', animationSpeed: '3s',   emoji: '🌙' },
+  active: { label: 'Active', color: '#A855F7', glowColor: 'rgba(168, 85, 247, 0.5)', animationSpeed: '2s',   emoji: '⚡' },
+  busy:   { label: 'Busy',   color: '#3B82F6', glowColor: 'rgba(59, 130, 246, 0.4)', animationSpeed: '4s',   emoji: '🌊' },
+  hyped:  { label: 'Hyped',  color: '#10B981', glowColor: 'rgba(16, 185, 129, 0.6)', animationSpeed: '1.2s', emoji: '🔥' },
+}
+
+export const SIGNAL_TIER_CONFIG: Record<SignalTier, {
+  label: string
+  ringColor: string
+  textColor: string
+}> = {
+  blazing: { label: 'Blazing', ringColor: '#10B981', textColor: '#10B981' },
+  warm:    { label: 'Warm',    ringColor: '#A855F7', textColor: '#A855F7' },
+  steady:  { label: 'Steady',  ringColor: '#3B82F6', textColor: '#3B82F6' },
+  quiet:   { label: 'Quiet',   ringColor: 'transparent', textColor: '#8B8B96' },
+}
+
+// ============================================================
+// CORE TYPES
+// ============================================================
+
 export type User = {
   id: string
   username: string
@@ -10,6 +72,13 @@ export type User = {
   online_at: string
   created_at: string
   updated_at: string
+  // Pulse fields
+  pulse_type: PulseType | null
+  pulse_expires_at: string | null
+  pulse_set_at: string | null
+  // Signal Score fields
+  signal_score: number
+  signal_score_updated_at: string
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'blocked'

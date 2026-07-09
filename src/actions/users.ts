@@ -81,3 +81,26 @@ export async function updateOnlineStatus() {
     .update({ online_at: new Date().toISOString() })
     .eq("id", user.id);
 }
+
+export async function checkUsernameAvailable(
+  username: string,
+  currentUserId: string
+): Promise<boolean> {
+  const supabase = await createClient();
+
+  // Basic format validation first (matches the DB constraint)
+  const isValidFormat = /^[a-zA-Z0-9_]{3,30}$/.test(username);
+  if (!isValidFormat) return false;
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id")
+    .eq("username", username)
+    .neq("id", currentUserId) // Exclude the current user's own username from the "taken" check
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+
+  return data === null; // null means no one else has this username = available
+}
+

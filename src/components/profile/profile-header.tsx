@@ -10,6 +10,8 @@ import type { User } from "@/types";
 import Link from "next/link";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { SignalBadge } from "@/components/shared/signal-badge";
+import { SignalScoreChart } from "@/components/profile/signal-score-chart";
 
 interface ProfileHeaderProps {
   profile: User;
@@ -74,6 +76,7 @@ export function ProfileHeader({ profile, isOwnProfile }: ProfileHeaderProps) {
               name={profile.display_name}
               size="xl"
               className="ring-0"
+              pulseType={profile.pulse_type}
             />
           </div>
         </div>
@@ -161,6 +164,12 @@ export function ProfileHeader({ profile, isOwnProfile }: ProfileHeaderProps) {
               {profile.bio}
             </p>
           )}
+
+          {/* Signal Score */}
+          <div className="flex items-center gap-3 mt-2">
+            <SignalBadge userId={profile.id} variant="full" />
+          </div>
+          <SignalScoreChart userId={profile.id} />
         </div>
       </div>
     </motion.div>
