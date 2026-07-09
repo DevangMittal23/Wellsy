@@ -8,6 +8,7 @@ import { reactToMessage, deleteMessage } from "@/actions/messages";
 import type { Message } from "@/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MessageItemProps {
   message: Message;
@@ -15,10 +16,19 @@ interface MessageItemProps {
   showAvatar: boolean;
 }
 
+const isEmojiOnly = (text: string) => {
+  if (!text) return false;
+  const emojiRegex = /^[\p{Emoji}\s]+$/u;
+  const cleaned = text.trim();
+  if (cleaned.length === 0 || cleaned.length > 8) return false;
+  return emojiRegex.test(text);
+};
+
 export function MessageItem({ message, isOwn, showAvatar }: MessageItemProps) {
   const [showOptions, setShowOptions] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   const sender = message.sender;
 
@@ -83,6 +93,10 @@ export function MessageItem({ message, isOwn, showAvatar }: MessageItemProps) {
     );
   }
 
+  const hasText = !!message.content;
+  const hasMedia = !!(message.media_url || message.gif_url);
+  const emojiOnly = isEmojiOnly(message.content || "") && !hasMedia;
+
   return (
     <div
       className={cn(
@@ -118,59 +132,113 @@ export function MessageItem({ message, isOwn, showAvatar }: MessageItemProps) {
         {/* Message Bubble */}
         <div
           className={cn(
-            "relative rounded-2xl px-4 py-2.5 text-sm shadow-sm transition-shadow duration-300 border",
-            isOwn
-              ? "bg-accent border-accent/40 text-white rounded-br-none"
-              : "bg-surface border-border text-text-primary rounded-bl-none"
+            "relative transition-all duration-300",
+            emojiOnly
+              ? "py-1.5 bg-transparent border-transparent shadow-none"
+              : cn(
+                  "rounded-2xl shadow-sm border",
+                  hasMedia && !hasText ? "p-0 overflow-hidden" : "px-4 py-2.5",
+                  isOwn
+                    ? "bg-accent border-accent/40 text-white"
+                    : "bg-surface border-border text-text-primary"
+                )
           )}
+          style={!emojiOnly ? {
+            borderRadius: isOwn ? "18px 18px 4px 18px" : "18px 18px 18px 4px"
+          } : undefined}
         >
           {/* Media Rendering */}
           {message.type === "image" && message.media_url && (
-            <div className="mb-1.5 overflow-hidden rounded-lg bg-black/10">
-              <img
-                src={message.media_url}
-                alt="Uploaded media"
-                className="max-h-60 object-contain w-full"
-                loading="lazy"
-              />
-            </div>
+            <>
+              <div 
+                className="max-w-[280px] sm:max-w-[220px] md:max-w-[280px] max-h-[320px] rounded-xl overflow-hidden cursor-pointer"
+                onClick={() => setShowLightbox(true)}
+              >
+                <img
+                  src={message.media_url}
+                  alt="Shared image"
+                  className="w-full h-auto object-cover"
+                  style={{ maxHeight: '320px', objectFit: 'cover' }}
+                  loading="lazy"
+                />
+              </div>
+              <AnimatePresence>
+                {showLightbox && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setShowLightbox(false)}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 cursor-zoom-out"
+                  >
+                    <motion.img
+                      initial={{ scale: 0.95 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0.95 }}
+                      src={message.media_url}
+                      alt="Enlarged shared image"
+                      className="max-w-full max-h-full object-contain rounded-lg"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
           )}
 
           {message.type === "video" && message.media_url && (
-            <div className="mb-1.5 overflow-hidden rounded-lg bg-black/10">
-              <video src={message.media_url} controls className="max-h-60 w-full" />
+            <div className="max-w-[280px] sm:max-w-[220px] md:max-w-[280px] rounded-xl overflow-hidden">
+              <video 
+                src={message.media_url}
+                controls
+                className="w-full h-auto"
+                style={{ maxHeight: '240px', objectFit: 'cover' }}
+              />
             </div>
           )}
 
           {message.type === "gif" && message.gif_url && (
-            <div className="mb-1.5 overflow-hidden rounded-lg bg-black/10">
-              <img
-                src={message.gif_url}
-                alt="GIF"
-                className="max-h-48 object-contain w-full"
-              />
+            <div className="max-w-[280px] sm:max-w-[220px] md:max-w-[280px] rounded-xl overflow-hidden">
+              <img src={message.gif_url} alt="GIF" className="w-full h-auto" />
             </div>
           )}
 
           {message.type === "audio" && message.media_url && (
-            <div className="flex items-center gap-3 py-1 pr-2">
+            <div className={cn(
+              "flex items-center gap-3 w-[220px] h-12 px-3 rounded-full border",
+              isOwn
+                ? "bg-white/20 border-white/30"
+                : "bg-purple-500/20 border-purple-500/30"
+            )}>
               <button
+                type="button"
                 onClick={() => handleAudioPlay(message.media_url!)}
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full transition-colors cursor-pointer",
-                  isOwn ? "bg-white/20 hover:bg-white/30 text-white" : "bg-accent/15 hover:bg-accent/25 text-accent"
+                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer transition-colors",
+                  isOwn ? "bg-white text-purple-600 hover:bg-white/90" : "bg-purple-500 text-white hover:bg-purple-600"
                 )}
               >
-                {isAudioPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
+                {isAudioPlaying ? <Pause className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5 fill-current ml-0.5" />}
               </button>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Voice note</span>
-                <span className="text-[11px] opacity-70">
-                  {message.media_metadata?.duration
-                    ? `${Math.floor(message.media_metadata.duration)}s`
-                    : "0:00"}
-                </span>
+              {/* Static waveform SVG bars */}
+              <div className="flex items-end gap-[2.5px] flex-1 h-5 mb-0.5">
+                {[4, 12, 8, 16, 6, 14, 10, 18, 8, 12, 10, 16, 6, 14, 8, 18, 12, 6, 10, 4].map((h, i) => (
+                  <div
+                    key={i} 
+                    className={cn(
+                      "w-[2px] rounded-full",
+                      isOwn
+                        ? (isAudioPlaying ? "bg-white" : "bg-white/50")
+                        : (isAudioPlaying ? "bg-purple-400" : "bg-purple-400/50")
+                    )}
+                    style={{ height: `${h}px` }}
+                  />
+                ))}
               </div>
+              <span className={cn("text-xs flex-shrink-0 select-none", isOwn ? "text-white/80" : "text-text-secondary")}>
+                {message.media_metadata?.duration
+                  ? `${Math.floor(Number(message.media_metadata.duration) / 60)}:${String(Math.floor(Number(message.media_metadata.duration) % 60)).padStart(2, '0')}`
+                  : "0:00"}
+              </span>
             </div>
           )}
 
@@ -189,12 +257,21 @@ export function MessageItem({ message, isOwn, showAvatar }: MessageItemProps) {
           )}
 
           {/* Text Content */}
-          {message.content && <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>}
+          {message.content && !hasMedia && (
+            emojiOnly ? (
+              <p className="text-4xl leading-none select-none">{message.content}</p>
+            ) : (
+              <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
+            )
+          )}
+          {message.content && hasMedia && (
+            <p className="leading-relaxed whitespace-pre-wrap mt-1.5">{message.content}</p>
+          )}
 
           {/* Time & Edit Status */}
           <div
             className={cn(
-              "text-[9px] text-right mt-1 opacity-70 flex justify-end items-center gap-1",
+              "text-[9px] text-right mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity flex justify-end items-center gap-1",
               isOwn ? "text-white/80" : "text-text-muted"
             )}
           >

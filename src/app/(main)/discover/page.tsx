@@ -1,59 +1,68 @@
 import type { Metadata } from "next";
-import { getSuggestedUsers, getPendingRequests } from "@/actions/friendships";
+import { getSuggestedUsers } from "@/actions/friendships";
 import { PeopleGrid } from "@/components/friends/people-grid";
-import { FriendRequestCard } from "@/components/friends/friend-request-card";
-import { Users, UserPlus } from "lucide-react";
+import { Users, TrendingUp } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { PostCard } from "@/components/feed/post-card";
+import type { Post } from "@/types";
 
 export const metadata: Metadata = {
-  title: "Discover People",
-  description: "Find and connect with people on HUDdang.",
+  title: "Explore",
+  description: "What's hot. Who's here on HUDdang.",
 };
 
 export default async function DiscoverPage() {
-  const [suggested, pendingRequests] = await Promise.all([
-    getSuggestedUsers(),
-    getPendingRequests(),
-  ]);
+  const suggested = await getSuggestedUsers();
+  
+  const supabase = await createClient();
+  const { data: trending } = await supabase
+    .from("posts")
+    .select("*, author:users(*)")
+    .eq("visibility", "public")
+    .order("likes_count", { ascending: false })
+    .limit(6);
+
+  const trendingPosts = (trending || []) as Post[];
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-primary">
-          Discover People
+    <div className="space-y-10">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+          Explore
         </h1>
         <p className="text-sm text-text-secondary">
-          Find friends and grow your network
+          What's hot. Who's here.
         </p>
       </div>
 
-      {/* Pending Friend Requests */}
-      {pendingRequests.length > 0 && (
-        <div className="mb-8">
-          <div className="mb-3 flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-accent" />
-            <h2 className="text-lg font-semibold text-text-primary">
-              Friend Requests
-            </h2>
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-bold text-white">
-              {pendingRequests.length}
-            </span>
+      {/* Trending Posts Section */}
+      <div>
+        <div className="mb-4 flex items-center gap-2 border-b border-white/[0.06] pb-2">
+          <TrendingUp className="h-5 w-5 text-accent" />
+          <h2 className="text-lg font-semibold text-text-primary font-display">
+            Trending on HUDdang
+          </h2>
+        </div>
+        
+        {trendingPosts.length === 0 ? (
+          <div className="glass flex flex-col items-center justify-center py-12 rounded-2xl">
+            <p className="text-sm text-text-secondary">No trending posts yet</p>
           </div>
-          <div className="space-y-2">
-            {pendingRequests.map((request) => (
-              <FriendRequestCard
-                key={request.id}
-                request={request}
-              />
+        ) : (
+          <div className="space-y-4">
+            {trendingPosts.map((post) => (
+              <PostCard key={post.id} post={post} />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Suggested People */}
+      {/* Suggested People Section */}
       <div>
-        <div className="mb-3 flex items-center gap-2">
+        <div className="mb-4 flex items-center gap-2 border-b border-white/[0.06] pb-2">
           <Users className="h-5 w-5 text-accent" />
-          <h2 className="text-lg font-semibold text-text-primary">
+          <h2 className="text-lg font-semibold text-text-primary font-display">
             People you may know
           </h2>
         </div>

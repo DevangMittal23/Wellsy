@@ -56,6 +56,27 @@ export function Sidebar() {
     }
   }, [user?.id]);
 
+  const [shouldShake, setShouldShake] = useState(false);
+
+  useEffect(() => {
+    if (notifUnread > 0) {
+      setShouldShake(true);
+      const t = setTimeout(() => setShouldShake(false), 600);
+      return () => clearTimeout(t);
+    }
+  }, [notifUnread]);
+
+  const bellVariants = {
+    shake: {
+      rotate: [0, -15, 12, -10, 8, -4, 0],
+      transition: {
+        duration: 0.5,
+        ease: "easeInOut" as const
+      }
+    },
+    default: { rotate: 0 }
+  };
+
   const getBadgeCount = (key: "chat" | "notifications" | "friends" | "feed" | null) => {
     if (key === "notifications") return notifUnread;
     if (key === "chat") return chatUnread;
@@ -82,6 +103,8 @@ export function Sidebar() {
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
           const badgeCount = getBadgeCount(item.badgeKey);
+          const isActivity = item.badgeKey === "notifications";
+          
           return (
             <Link
               key={item.href}
@@ -94,12 +117,26 @@ export function Sidebar() {
               )}
             >
               <div className="relative">
-                <item.icon
-                  className={cn(
-                    "h-5 w-5 shrink-0 transition-colors",
-                    isActive ? "text-accent" : "text-text-muted group-hover:text-text-secondary"
-                  )}
-                />
+                {isActivity ? (
+                  <motion.div
+                    animate={shouldShake ? "shake" : "default"}
+                    variants={bellVariants}
+                  >
+                    <item.icon
+                      className={cn(
+                        "h-5 w-5 shrink-0 transition-colors",
+                        isActive ? "text-accent" : "text-text-muted group-hover:text-text-secondary"
+                      )}
+                    />
+                  </motion.div>
+                ) : (
+                  <item.icon
+                    className={cn(
+                      "h-5 w-5 shrink-0 transition-colors",
+                      isActive ? "text-accent" : "text-text-muted group-hover:text-text-secondary"
+                    )}
+                  />
+                )}
                 {badgeCount > 0 && (
                   <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-white shadow-lg shadow-accent/30">
                     {badgeCount > 99 ? "99+" : badgeCount}

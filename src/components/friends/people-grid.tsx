@@ -58,77 +58,76 @@ export function PeopleGrid({ people }: PeopleGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div className="flex flex-col gap-3">
       <AnimatePresence mode="popLayout">
         {people.map((person, index) => {
           const isSent = sentIds.has(person.id);
           const isLoading = loadingIds.has(person.id);
+          const mutualCount = (person as any).mutual_friends_count || 0;
 
           return (
             <motion.div
               key={person.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ delay: index * 0.04, duration: 0.25 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: index * 0.05, duration: 0.2 }}
+              className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all duration-200"
             >
-              <div className="glass-card flex flex-col p-4 transition-colors hover:bg-surface-hover">
-                <div className="flex items-start gap-3">
-                  <Link
-                    href={`/profile/${person.username}`}
-                    className="relative shrink-0"
-                  >
-                    <UserAvatar
-                      src={person.avatar_url}
-                      name={person.display_name}
-                      isOnline={true}
-                      size="sm"
-                    />
+              <div className="flex items-center gap-3">
+                <Link href={`/profile/${person.username}`} className="shrink-0">
+                  <UserAvatar
+                    src={person.avatar_url}
+                    name={person.display_name}
+                    isOnline={true}
+                    size="md"
+                  />
+                </Link>
+                <div>
+                  <Link href={`/profile/${person.username}`} className="group">
+                    <p className="font-semibold text-sm text-text-primary group-hover:text-accent transition-colors">
+                      {person.display_name}
+                    </p>
+                    <p className="text-xs text-text-muted">@{person.username}</p>
                   </Link>
-
-                  <div className="min-w-0 flex-1">
-                    <Link href={`/profile/${person.username}`} className="group">
-                      <p className="truncate text-sm font-semibold text-text-primary group-hover:text-accent transition-colors">
-                        {person.display_name}
-                      </p>
-                      <p className="text-xs text-text-muted">
-                        @{person.username}
-                      </p>
-                    </Link>
-                    {person.bio && (
-                      <p className="mt-1 line-clamp-2 text-xs text-text-secondary leading-relaxed">
-                        {person.bio}
-                      </p>
-                    )}
-                  </div>
+                  {person.bio && (
+                    <p className="text-xs text-text-secondary mt-0.5 line-clamp-1">
+                      {person.bio}
+                    </p>
+                  )}
+                  <p className="text-xs text-purple-400 mt-0.5">
+                    {mutualCount > 0 
+                      ? `${mutualCount} mutual friend${mutualCount > 1 ? 's' : ''}`
+                      : 'New to HUDdang'
+                    }
+                  </p>
                 </div>
+              </div>
 
-                {/* Add Friend Action Button */}
-                <div className="mt-3 flex items-center gap-2">
-                  <button
-                    disabled={isSent || isLoading}
-                    onClick={() => handleSendRequest(person.id)}
-                    className={`flex h-9 items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-80 cursor-pointer ${
-                      isSent
-                        ? "bg-success/10 text-success cursor-default"
-                        : "bg-accent text-white hover:bg-accent-hover"
-                    }`}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : isSent ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" />
-                        Sent
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="h-3.5 w-3.5" />
-                        Add Friend
-                      </>
-                    )}
-                  </button>
-                </div>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={isSent || isLoading}
+                  onClick={() => handleSendRequest(person.id)}
+                  className={`flex h-9 items-center justify-center gap-1.5 px-4 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-80 cursor-pointer ${
+                    isSent
+                      ? "bg-success/10 text-success cursor-default"
+                      : "bg-accent text-white hover:bg-accent-hover"
+                  }`}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : isSent ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" />
+                      Sent
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Add Friend
+                    </>
+                  )}
+                </button>
               </div>
             </motion.div>
           );

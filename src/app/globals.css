@@ -1,53 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================
-   WELLSY DESIGN SYSTEM
-   "Where conversations feel alive."
-   
-   Dark-first, premium, glassmorphic
+   HUDdang Theme Variables
    ============================================ */
+:root {
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Backgrounds */
+  --bg-base: #08080C;
+  --bg-surface: rgba(255, 255, 255, 0.03);
+  --bg-elevated: rgba(255, 255, 255, 0.06);
+  --bg-hover: rgba(255, 255, 255, 0.09);
+
+  /* Accents */
+  --accent-primary: #A855F7;
+  --accent-primary-hover: #9333EA;
+  --accent-success: #10B981;
+  --accent-danger: #EF4444;
+  --accent-warning: #F59E0B;
+
+  /* Text */
+  --text-primary: #F0F0F4;
+  --text-secondary: #8B8B96;
+  --text-muted: #4A4A54;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+}
 
 @theme inline {
   /* ---- Core Palette ---- */
-  --color-background: hsl(240 10% 3.9%);
-  --color-background-secondary: hsl(240 6% 6%);
-  --color-surface: hsl(240 6% 10%);
-  --color-surface-hover: hsl(240 5% 14%);
-  --color-surface-active: hsl(240 5% 18%);
+  --color-background: #08080C;
+  --color-background-secondary: #0c0c12;
+  --color-surface: rgba(255, 255, 255, 0.03);
+  --color-surface-hover: rgba(255, 255, 255, 0.06);
+  --color-surface-active: rgba(255, 255, 255, 0.09);
 
-  --color-border: hsl(240 4% 16%);
-  --color-border-subtle: hsl(240 3% 12%);
-  --color-border-focus: hsl(263 70% 50%);
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-border-focus: #A855F7;
 
-  --color-text-primary: hsl(0 0% 98%);
-  --color-text-secondary: hsl(240 5% 65%);
-  --color-text-muted: hsl(240 4% 46%);
-  --color-text-inverse: hsl(240 10% 4%);
+  --color-text-primary: #F0F0F4;
+  --color-text-secondary: #8B8B96;
+  --color-text-muted: #4A4A54;
+  --color-text-inverse: #08080C;
 
   /* ---- Brand Accent ---- */
-  --color-accent: hsl(263 70% 58%);
-  --color-accent-hover: hsl(263 70% 65%);
-  --color-accent-muted: hsl(263 50% 20%);
-  --color-accent-subtle: hsl(263 40% 12%);
+  --color-accent: #A855F7;
+  --color-accent-hover: #9333EA;
+  --color-accent-muted: rgba(168, 85, 247, 0.2);
+  --color-accent-subtle: rgba(168, 85, 247, 0.1);
 
   /* ---- Semantic ---- */
-  --color-success: hsl(142 71% 45%);
-  --color-success-muted: hsl(142 40% 15%);
-  --color-warning: hsl(38 92% 50%);
-  --color-warning-muted: hsl(38 40% 15%);
-  --color-error: hsl(0 84% 60%);
-  --color-error-muted: hsl(0 40% 15%);
-  --color-info: hsl(199 89% 48%);
+  --color-success: #10B981;
+  --color-success-muted: rgba(16, 185, 129, 0.15);
+  --color-warning: #F59E0B;
+  --color-warning-muted: rgba(245, 158, 11, 0.15);
+  --color-error: #EF4444;
+  --color-error-muted: rgba(239, 68, 68, 0.15);
+  --color-info: #3B82F6;
 
   /* ---- Shadows ---- */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.15);
-  --shadow-glow-strong: 0 0 40px rgba(139, 92, 246, 0.25);
+  --shadow-glow: 0 0 20px rgba(168, 85, 247, 0.15);
+  --shadow-glow-strong: 0 0 40px rgba(168, 85, 247, 0.25);
 
   /* ---- Border Radius ---- */
   --radius-sm: 0.375rem;
@@ -71,7 +97,7 @@
   --animate-float: float 6s ease-in-out infinite;
 
   /* ---- Fonts ---- */
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -104,8 +130,8 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.1); }
-  50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.25); }
+  0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.25); }
 }
 
 @keyframes float {
@@ -140,68 +166,43 @@ html {
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-text-primary);
-  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
-/* ============================================
-   SCROLLBAR
-   ============================================ */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Apply Space Grotesk to all headings */
+h1, h2, h3, h4, h5, h6,
+.font-display {
+  font-family: var(--font-display);
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+/* Scrollbar — subtle, matching dark theme */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: hsl(240 4% 24%);
-  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(240 4% 32%);
+  background: rgba(255, 255, 255, 0.2);
 }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(240 4% 24%) transparent;
-}
-
-/* ============================================
-   SELECTION
-   ============================================ */
+/* Selection color */
 ::selection {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(168, 85, 247, 0.3);
   color: white;
 }
 
-/* ============================================
-   FOCUS STYLES
-   ============================================ */
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
-
-/* ============================================
-   UTILITY CLASSES
-   ============================================ */
-
-/* Glass effects */
+/* Glassmorphic utility class */
 .glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
 }
 
 .glass-strong {
@@ -212,21 +213,28 @@ body {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-surface);
   backdrop-filter: blur(20px) saturate(1.3);
   -webkit-backdrop-filter: blur(20px) saturate(1.3);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
 }
 
+/* Remove default focus ring, use purple custom */
+*:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 /* Gradients */
 .gradient-primary {
-  background: linear-gradient(135deg, hsl(263 70% 58%), hsl(290 65% 55%));
+  background: linear-gradient(135deg, #A855F7, #D946EF);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, hsl(263 70% 65%), hsl(290 65% 60%), hsl(320 70% 60%));
+  background: linear-gradient(135deg, #c084fc, #e879f9, #f472b6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -242,7 +250,7 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, hsl(263 70% 58%), hsl(290 65% 55%));
+  background: linear-gradient(135deg, #A855F7, #D946EF);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -259,7 +267,7 @@ body {
 }
 
 .glow-text {
-  text-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  text-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
 }
 
 /* Skeleton loading */
@@ -287,9 +295,7 @@ body {
   }
 }
 
-/* ============================================
-   TYPOGRAPHY UTILITIES
-   ============================================ */
+/* Typography utilities */
 .text-balance {
   text-wrap: balance;
 }
@@ -298,13 +304,11 @@ body {
   text-wrap: pretty;
 }
 
-/* ============================================
-   FORM STYLES
-   ============================================ */
+/* Form Styles */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--color-text-primary);
+  -webkit-text-fill-color: var(--text-primary);
   -webkit-box-shadow: 0 0 0px 1000px var(--color-surface) inset;
   transition: background-color 5000s ease-in-out 0s;
 }

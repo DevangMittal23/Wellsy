@@ -9,16 +9,14 @@ import { FriendSuggestions } from "@/components/friends/friend-suggestions";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users, UserPlus, Sparkles, Loader2, RefreshCw } from "lucide-react";
 
-type TabType = "friends" | "requests" | "suggestions";
+type TabType = "friends" | "requests";
 
 export default function FriendsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const {
     friends,
     pendingRequests,
-    suggestions,
     isLoading: socialLoading,
-    sendRequest,
     acceptRequest,
     rejectRequest,
     removeFriend,
@@ -41,12 +39,6 @@ export default function FriendsPage() {
       count: pendingRequests.length,
       badge: true,
     },
-    {
-      id: "suggestions" as const,
-      label: "Suggestions",
-      icon: Sparkles,
-      count: suggestions.length,
-    },
   ];
 
   const isLoading = authLoading || (socialLoading && friends.length === 0);
@@ -57,10 +49,10 @@ export default function FriendsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-            Social Circle
+            Your Circle
           </h1>
           <p className="text-sm text-text-secondary">
-            Manage your friendships, requests, and discoveries
+            Friends · Requests
           </p>
         </div>
         
@@ -145,12 +137,6 @@ export default function FriendsPage() {
                   requests={pendingRequests}
                   onAccept={acceptRequest}
                   onReject={rejectRequest}
-                />
-              )}
-              {activeTab === "suggestions" && (
-                <FriendSuggestions
-                  suggestions={suggestions}
-                  onSendRequest={sendRequest}
                 />
               )}
             </motion.div>

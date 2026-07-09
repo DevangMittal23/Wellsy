@@ -81,26 +81,35 @@ export function MessageList({
 
       {/* Messages */}
       <div className="flex-1 flex flex-col justify-end space-y-1.5">
-        {messages.map((message, index) => {
-          const isOwn = message.sender_id === currentUserId;
-          
-          // Show avatar only if previous message was from a different user or >2m ago
-          const prevMessage = messages[index - 1];
-          const showAvatar =
-            !prevMessage ||
-            prevMessage.sender_id !== message.sender_id ||
-            new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime() >
-              120000;
+        <AnimatePresence initial={false}>
+          {messages.map((message, index) => {
+            const isOwn = message.sender_id === currentUserId;
+            
+            // Show avatar only if previous message was from a different user or >2m ago
+            const prevMessage = messages[index - 1];
+            const showAvatar =
+              !prevMessage ||
+              prevMessage.sender_id !== message.sender_id ||
+              new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime() >
+                120000;
 
-          return (
-            <MessageItem
-              key={message.id}
-              message={message}
-              isOwn={isOwn}
-              showAvatar={showAvatar}
-            />
-          );
-        })}
+            return (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="w-full"
+              >
+                <MessageItem
+                  message={message}
+                  isOwn={isOwn}
+                  showAvatar={showAvatar}
+                />
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
 
       {/* Typing indicators */}

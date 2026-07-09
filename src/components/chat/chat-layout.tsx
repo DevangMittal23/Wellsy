@@ -30,12 +30,10 @@ export function ChatLayout({
       >
         <div className="mb-4 shrink-0">
           <h1 className="text-xl font-bold text-text-primary tracking-tight">
-            Messages
+            Chats
           </h1>
           <p className="text-xs text-text-muted">
-            {friends.length > 0
-              ? `${friends.length} friend${friends.length !== 1 ? "s" : ""} • tap + to chat`
-              : "Your active conversations"}
+            Your active conversations
           </p>
         </div>
         <div className="flex-1 min-h-0">

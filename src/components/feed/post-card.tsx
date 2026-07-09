@@ -211,17 +211,11 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
   }, [post.is_liked, handleLike]);
 
   return (
-    <motion.article
-      layout
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      className="glass-card overflow-hidden transition-shadow duration-300 hover:shadow-xl"
-    >
+    <div className="glass-card group/card flex flex-col overflow-hidden border border-white/[0.06]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5">
+      <div className="flex items-center justify-between px-5 pt-4">
         <Link
-          href={`/profile/${author?.username}`}
+          href={`/profile/${author?.username || "user"}`}
           className="flex items-center gap-3 group"
         >
           <UserAvatar
@@ -244,7 +238,7 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-secondary cursor-pointer"
+              className="rounded-lg p-1.5 text-text-muted transition-all hover:bg-surface-hover hover:text-text-secondary cursor-pointer opacity-0 group-hover/card:opacity-100 duration-200"
               aria-label="Post options"
             >
               <MoreHorizontal className="h-5 w-5" />
@@ -307,36 +301,67 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
       {/* Media */}
       {post.media_urls && post.media_urls.length > 0 && (
         <div className="mt-3 px-5">
-          <div
-            className={cn(
-              "overflow-hidden rounded-xl",
-              post.media_urls.length > 1 && "grid grid-cols-2 gap-1"
-            )}
-          >
-            {post.media_urls.map((url, i) => {
-              const mediaType = post.media_types?.[i] || "image";
-              return (
-                <div key={url} className="relative overflow-hidden bg-surface">
-                  {mediaType === "video" ? (
-                    <video
-                      src={url}
-                      controls
-                      className="w-full rounded-xl"
-                      preload="metadata"
-                    />
-                  ) : (
-                    <img
-                      src={url}
-                      alt="Post media"
-                      className="w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
-                      style={{ maxHeight: "400px" }}
-                      loading="lazy"
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          {post.media_urls.length === 1 ? (
+            <div 
+              className="relative w-full overflow-hidden rounded-xl bg-surface border border-white/[0.06]"
+              style={{ aspectRatio: "16/9", maxHeight: "480px" }}
+            >
+              {post.media_types?.[0] === "video" ? (
+                <video
+                  src={post.media_urls[0]}
+                  controls
+                  className="w-full h-full object-cover"
+                  preload="metadata"
+                />
+              ) : (
+                <img
+                  src={post.media_urls[0]}
+                  alt="Post media"
+                  className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-[1.01]"
+                  loading="lazy"
+                  onClick={() => window.open(post.media_urls[0], "_blank")}
+                />
+              )}
+            </div>
+          ) : (
+            <div className={cn(
+              "grid gap-1 rounded-xl overflow-hidden h-[360px] bg-surface border border-white/[0.06]",
+              post.media_urls.length === 2 ? "grid-cols-2" : "grid-cols-2"
+            )}>
+              {post.media_urls.slice(0, 4).map((url, index) => {
+                const mediaType = post.media_types?.[index] || "image";
+                const isThirdAndFirst = post.media_urls.length === 3 && index === 0;
+                return (
+                  <div key={url} className={cn("relative overflow-hidden bg-black/10 w-full h-full", isThirdAndFirst && "row-span-2")}>
+                    {mediaType === "video" ? (
+                      <video
+                        src={url}
+                        controls
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img
+                        src={url}
+                        alt="Post media item"
+                        className="w-full h-full object-cover cursor-pointer"
+                        loading="lazy"
+                        onClick={() => window.open(url, "_blank")}
+                      />
+                    )}
+                    {index === 3 && post.media_urls.length > 4 && (
+                      <div 
+                        onClick={() => window.open(url, "_blank")}
+                        className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer"
+                      >
+                        <span className="text-white text-2xl font-bold">+{post.media_urls.length - 4}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -372,37 +397,45 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
       )}
 
       {/* Interactions */}
-      <div className="flex items-center gap-1 px-3 py-3 border-b border-border/20">
-        <button
+      <div className="flex items-center gap-6 px-5 py-3 border-b border-border/20">
+        <motion.button
+          whileTap={{ scale: 0.8 }}
           onClick={handleLike}
           disabled={isPending}
-          className={cn(
-            "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
-            post.is_liked
-              ? "text-rose-400"
-              : "text-text-muted hover:text-rose-400 hover:bg-rose-400/10"
-          )}
+          className="flex items-center gap-1.5 text-text-muted hover:text-rose-500 transition-colors cursor-pointer"
           aria-label={post.is_liked ? "Unlike post" : "Like post"}
         >
-          <Heart
-            className={cn(
-              "h-[18px] w-[18px] transition-all duration-200",
-              post.is_liked && "fill-rose-400",
-              isLikeAnimating && "animate-[heart-burst_0.4s_ease-out]"
+          <motion.div
+            animate={post.is_liked ? { scale: [1, 1.4, 1] } : { scale: 1 }}
+            transition={{ duration: 0.3, type: 'spring', stiffness: 400 }}
+          >
+            <Heart
+              className={cn(
+                "h-[18px] w-[18px]",
+                post.is_liked ? "text-rose-500 fill-rose-500" : "text-text-muted"
+              )}
+            />
+          </motion.div>
+          <AnimatePresence mode="wait">
+            {post.likes_count > 0 && (
+              <motion.span
+                key={post.likes_count}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                className="text-xs font-medium tabular-nums"
+              >
+                {post.likes_count}
+              </motion.span>
             )}
-          />
-          {post.likes_count > 0 && (
-            <span className="text-xs font-medium">{post.likes_count}</span>
-          )}
-        </button>
+          </AnimatePresence>
+        </motion.button>
 
         <button
           onClick={toggleComments}
           className={cn(
-            "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
-            showComments
-              ? "text-accent bg-accent/10 font-medium"
-              : "text-text-muted hover:text-info hover:bg-info/10"
+            "flex items-center gap-1.5 text-text-muted hover:text-info transition-colors cursor-pointer",
+            showComments && "text-accent font-medium"
           )}
           aria-label="Comment on post"
         >
@@ -415,18 +448,13 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
         <button
           onClick={handleSave}
           disabled={isPending}
-          className={cn(
-            "group flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
-            post.is_bookmarked
-              ? "text-amber-400"
-              : "text-text-muted hover:text-amber-400 hover:bg-amber-400/10"
-          )}
+          className="flex items-center gap-1.5 text-text-muted hover:text-amber-500 transition-colors cursor-pointer"
           aria-label={post.is_bookmarked ? "Unsave post" : "Save post"}
         >
           <Bookmark
             className={cn(
               "h-[18px] w-[18px] transition-all duration-200",
-              post.is_bookmarked && "fill-amber-400"
+              post.is_bookmarked ? "text-amber-500 fill-amber-500" : "text-text-muted"
             )}
           />
         </button>
@@ -434,10 +462,10 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
         <button
           onClick={handleShare}
           className={cn(
-            "group ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
+            "ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer",
             copied
-              ? "text-success bg-success/10"
-              : "text-text-muted hover:text-accent hover:bg-accent/10"
+              ? "text-success bg-success/10 font-semibold"
+              : "text-text-muted hover:text-accent"
           )}
           aria-label="Share post"
         >
@@ -621,6 +649,6 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.article>
+    </div>
   );
 }

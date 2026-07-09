@@ -13,12 +13,6 @@ export default async function FeedPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-primary">Feed</h1>
-        <p className="text-sm text-text-secondary">
-          See what's happening in your world
-        </p>
-      </div>
 
       <FeedList
         initialPosts={posts as Post[]}
